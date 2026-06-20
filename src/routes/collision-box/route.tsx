@@ -3,19 +3,19 @@ import { useState } from 'react'
 import type { CollisionBox } from './types'
 import { CollisionViewport } from './-components/CollisionViewport'
 import { JSONImport } from './-components/JSONImport'
-import { Plus, Trash2, Eye, EyeOff, Undo2, Redo2, FileJson2 } from 'lucide-react'
+import { Plus, Trash2, Eye, EyeOff, Undo2, Redo2, FileJson2, RotateCcw } from 'lucide-react'
 
 type NumericCoordKey = 'minX' | 'minY' | 'minZ' | 'maxX' | 'maxY' | 'maxZ';
+
+const DEFAULT_BOXES: CollisionBox[] = [];
 
 export const Route = createFileRoute('/collision-box')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const [boxes, setBoxes] = useState<CollisionBox[]>([
-    { id: 'base-plate', name: 'base_plate', visible: true, minX: 0, minY: 0, minZ: 0, maxX: 16, maxY: 2, maxZ: 16 }
-  ]);
-  const [selectedBoxId, setSelectedBoxId] = useState<string>('base-plate');
+  const [boxes, setBoxes] = useState<CollisionBox[]>(() => DEFAULT_BOXES.map(box => ({ ...box })));
+  const [selectedBoxId, setSelectedBoxId] = useState<string>('');
   const [showImportModal, setShowImportModal] = useState(false);
   
   // History tracking arrays
@@ -35,6 +35,13 @@ function RouteComponent() {
     setRedoStack(prev => [boxes, ...prev]);
     setBoxes(previous);
     setHistory(prev => prev.slice(0, -1));
+  };
+
+  const resetBuilder = () => {
+    setBoxes(DEFAULT_BOXES.map(box => ({ ...box })));
+    setSelectedBoxId('');
+    setHistory([]);
+    setRedoStack([]);
   };
 
   const handleRedo = () => {
@@ -133,6 +140,13 @@ function RouteComponent() {
             className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent"
           >
             <FileJson2 size={13} /> Import
+          </button>
+          <button
+            type="button"
+            onClick={resetBuilder}
+            className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent"
+          >
+            <RotateCcw size={13} /> Reset
           </button>
           <button disabled={history.length === 0} onClick={handleUndo}
             className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
