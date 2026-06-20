@@ -2,7 +2,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { CollisionBox } from './types'
 import { CollisionViewport } from './-components/CollisionViewport'
-import { Plus, Trash2, Eye, EyeOff, Undo2, Redo2 } from 'lucide-react'
+import { JSONImport } from './-components/JSONImport'
+import { Plus, Trash2, Eye, EyeOff, Undo2, Redo2, FileJson2 } from 'lucide-react'
+
+type NumericCoordKey = 'minX' | 'minY' | 'minZ' | 'maxX' | 'maxY' | 'maxZ';
 
 export const Route = createFileRoute('/collision-box')({
   component: RouteComponent,
@@ -13,6 +16,7 @@ function RouteComponent() {
     { id: 'base-plate', name: 'base_plate', visible: true, minX: 0, minY: 0, minZ: 0, maxX: 16, maxY: 2, maxZ: 16 }
   ]);
   const [selectedBoxId, setSelectedBoxId] = useState<string>('base-plate');
+  const [showImportModal, setShowImportModal] = useState(false);
   
   // History tracking arrays
   const [history, setHistory] = useState<CollisionBox[][]>([]);
@@ -69,7 +73,7 @@ function RouteComponent() {
     setBoxes(boxes.map(b => b.id === id ? { ...b, visible: !b.visible } : b));
   };
 
-  const updateBoxAttribute = (id: string, key: keyof CollisionBox, value: any) => {
+  const updateBoxAttribute = (id: string, key: keyof CollisionBox, value: CollisionBox[keyof CollisionBox]) => {
     // Avoid cloning full history intervals on simple name text modifications
     if (key !== 'name') {
       saveHistoryState(boxes);
@@ -77,24 +81,42 @@ function RouteComponent() {
 
     setBoxes(boxes.map(b => {
       if (b.id !== id) return b;
-      let updated = { ...b } as any;
-      updated[key] = value;
+      const updated = { ...b } as CollisionBox;
 
-      if (typeof value === 'number') {
+      if (typeof value === 'number' && ['minX', 'minY', 'minZ', 'maxX', 'maxY', 'maxZ'].includes(key)) {
+        const numericKey = key as NumericCoordKey;
         const clamped = Math.max(0, Math.min(16, value));
-        updated[key] = clamped;
+        updated[numericKey] = clamped;
 
-        if (key.startsWith('min')) {
-          const maxKey = key.replace('min', 'max');
-          if (clamped > (b[maxKey as keyof CollisionBox] as number)) updated[maxKey] = clamped;
+        if (numericKey.startsWith('min')) {
+          const maxKey = `max${numericKey.slice(3)}` as NumericCoordKey;
+          if (clamped > (b[maxKey] as number)) {
+            updated[maxKey] = clamped;
+          }
         }
-        if (key.startsWith('max')) {
-          const minKey = key.replace('max', 'min');
-          if (clamped < (b[minKey as keyof CollisionBox] as number)) updated[minKey] = clamped;
+        if (numericKey.startsWith('max')) {
+          const minKey = `min${numericKey.slice(3)}` as NumericCoordKey;
+          if (clamped < (b[minKey] as number)) {
+            updated[minKey] = clamped;
+          }
         }
+      } else if (key === 'name' && typeof value === 'string') {
+        updated.name = value;
+      } else if (key === 'visible' && typeof value === 'boolean') {
+        updated.visible = value;
       }
-      return updated as CollisionBox;
+
+      return updated;
     }));
+  };
+
+  const handleImport = (importedBoxes: CollisionBox[], replaceExisting: boolean) => {
+    saveHistoryState(boxes);
+    const nextBoxes = replaceExisting ? importedBoxes : [...boxes, ...importedBoxes];
+    setBoxes(nextBoxes);
+    if (nextBoxes.length > 0) {
+      setSelectedBoxId(nextBoxes[0].id);
+    }
   };
 
   return (
@@ -105,6 +127,13 @@ function RouteComponent() {
           <p className="text-xs text-muted-foreground">Construct complex compound Minecraft VoxelShapes interactively.</p>
         </div>
         <div className="flex gap-1 bg-muted p-1 rounded-md border border-border">
+          <button
+            type="button"
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent"
+          >
+            <FileJson2 size={13} /> Import
+          </button>
           <button disabled={history.length === 0} onClick={handleUndo}
             className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
             <Undo2 size={15} />
@@ -115,6 +144,10 @@ function RouteComponent() {
           </button>
         </div>
       </div>
+
+      {showImportModal ? (
+        <JSONImport isOpen={showImportModal} onClose={() => setShowImportModal(false)} onImport={handleImport} />
+      ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <div className="lg:col-span-2 space-y-3">
