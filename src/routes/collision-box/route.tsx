@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { CollisionBox } from './types'
 import { CollisionViewport } from './-components/CollisionViewport'
 import { JSONImport } from './-components/JSONImport'
@@ -21,12 +21,29 @@ function RouteComponent() {
   // History tracking arrays
   const [history, setHistory] = useState<CollisionBox[][]>([]);
   const [redoStack, setRedoStack] = useState<CollisionBox[][]>([]);
+  const pendingHistorySnapshotRef = useRef<CollisionBox[] | null>(null);
+  const isHistoryPendingRef = useRef(false);
 
   const selectedBox = boxes.find(b => b.id === selectedBoxId);
 
   const saveHistoryState = (currentBoxes: CollisionBox[]) => {
     setHistory(prev => [...prev, currentBoxes]);
     setRedoStack([]); // Clear redo stack on manual actions
+  };
+
+  const beginPendingHistory = (currentBoxes: CollisionBox[]) => {
+    if (!isHistoryPendingRef.current) {
+      pendingHistorySnapshotRef.current = currentBoxes;
+      isHistoryPendingRef.current = true;
+    }
+  };
+
+  const commitPendingHistory = () => {
+    if (!isHistoryPendingRef.current || !pendingHistorySnapshotRef.current) return;
+
+    saveHistoryState(pendingHistorySnapshotRef.current);
+    pendingHistorySnapshotRef.current = null;
+    isHistoryPendingRef.current = false;
   };
 
   const handleUndo = () => {
@@ -81,12 +98,9 @@ function RouteComponent() {
   };
 
   const updateBoxAttribute = (id: string, key: keyof CollisionBox, value: CollisionBox[keyof CollisionBox]) => {
-    // Avoid cloning full history intervals on simple name text modifications
-    if (key !== 'name') {
-      saveHistoryState(boxes);
-    }
+    beginPendingHistory(boxes);
 
-    setBoxes(boxes.map(b => {
+    setBoxes(prev => prev.map(b => {
       if (b.id !== id) return b;
       const updated = { ...b } as CollisionBox;
 
@@ -212,6 +226,8 @@ function RouteComponent() {
                 <label className="text-[11px] font-medium text-muted-foreground block mb-1">Element Name</label>
                 <input type="text" value={selectedBox.name}
                   onChange={(e) => updateBoxAttribute(selectedBox.id, 'name', e.target.value)}
+                  onBlur={commitPendingHistory}
+                  onKeyDown={(e) => e.key === 'Enter' && commitPendingHistory()}
                   className="w-full bg-muted border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-ring font-mono text-foreground" />
               </div>
               <div className="border-t border-border pt-2 space-y-2">
@@ -228,10 +244,13 @@ function RouteComponent() {
                             <input type="range" min="0" max="16" step="0.25"
                               value={selectedBox[key as keyof CollisionBox] as number}
                               onChange={(e) => updateBoxAttribute(selectedBox.id, key as keyof CollisionBox, parseFloat(e.target.value))}
+                              onMouseUp={commitPendingHistory}
                               className="flex-1 h-1 bg-border rounded appearance-none accent-foreground" />
                             <input type="number" step="0.5"
                               value={selectedBox[key as keyof CollisionBox] as number}
                               onChange={(e) => updateBoxAttribute(selectedBox.id, key as keyof CollisionBox, parseFloat(e.target.value) || 0)}
+                              onBlur={commitPendingHistory}
+                              onKeyDown={(e) => e.key === 'Enter' && commitPendingHistory()}
                               className="w-10 bg-background text-center rounded border border-border text-[11px] font-mono py-0.5 text-foreground" />
                           </div>
                         ))}
