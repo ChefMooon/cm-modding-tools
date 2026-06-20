@@ -335,14 +335,14 @@ function RouteComponent() {
   }, [addNewBox, boxes, copiedBox, duplicateSelectedBox, handleRedo, handleUndo, moveAxis, moveStep, nudgeSelectedBox, removeBox, resetSelectedBox, saveHistoryState, selectedBox, selectedBoxId, toggleVisibility]);
 
   return (
-    <div className="w-full max-w-screen-2xl mx-auto space-y-4 text-foreground app-shell min-h-screen">
-      <div className="border-b border-border pb-3 space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">Voxel Collision Builder</h1>
+    <div className="mx-auto min-h-screen w-full max-w-screen-2xl space-y-4 text-foreground app-shell">
+      <div className="space-y-2 border-b border-border pb-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">Voxel Collision Builder</h1>
             <p className="text-xs text-muted-foreground">Construct complex compound Minecraft VoxelShapes interactively.</p>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-1 bg-muted p-1 rounded-md border border-border">
+          <div className="flex flex-wrap items-center justify-start gap-1 rounded-md border border-border bg-muted p-1 sm:justify-end">
             <button
               type="button"
               onClick={() => setShowShortcutsHelp(prev => !prev)}
@@ -365,11 +365,11 @@ function RouteComponent() {
               <RotateCcw size={13} /> Reset
             </button>
             <button disabled={history.length === 0} onClick={handleUndo}
-              className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
+              className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30 cursor-pointer">
               <Undo2 size={15} />
             </button>
             <button disabled={redoStack.length === 0} onClick={handleRedo}
-              className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
+              className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30 cursor-pointer">
               <Redo2 size={15} />
             </button>
           </div>
@@ -406,7 +406,7 @@ function RouteComponent() {
         <JSONImport isOpen={showImportModal} onClose={() => setShowImportModal(false)} onImport={handleImport} />
       ) : null}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)] gap-4 items-start">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <div className="min-w-0 space-y-3">
           <CollisionViewport
             boxes={boxes}
@@ -419,24 +419,24 @@ function RouteComponent() {
             onMoveBox={moveBoxByDelta}
           />
 
-          <div className="p-3 bg-muted border border-border rounded-lg">
-            <h3 className="text-xs font-medium text-muted-foreground mb-1.5">Java Code Output</h3>
-            <pre className="text-xs text-amber-600 overflow-x-auto p-2 bg-background rounded border border-border font-mono select-all">
+          <div className="rounded-lg border border-border bg-muted p-3">
+            <h3 className="mb-1.5 text-xs font-medium text-muted-foreground">Java Code Output</h3>
+            <pre className="overflow-x-auto rounded border border-border bg-background p-2 font-mono text-[11px] text-amber-600 select-all sm:text-xs">
   {`public static final VoxelShape SHAPE = VoxelShapes.or(\n${boxes.map(b => `  Block.box(${b.minX}, ${b.minY}, ${b.minZ}, ${b.maxX}, ${b.maxY}, ${b.maxZ})`).join(',\n')}\n);`}
             </pre>
           </div>
         </div>
 
-        <div className="w-full lg:max-w-[360px] space-y-4">
-          <div className="bg-card border border-border rounded-lg p-3 space-y-2">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">Elements</h2>
+        <div className="w-full space-y-4 lg:max-w-[360px]">
+          <div className="space-y-2 rounded-lg border border-border bg-card p-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Elements</h2>
               <button onClick={addNewBox}
-                className="flex items-center gap-1 text-xs bg-foreground text-background font-medium hover:opacity-90 transition px-2 py-1 rounded cursor-pointer">
+                className="flex items-center justify-center gap-1 rounded bg-foreground px-2 py-1 text-xs font-medium text-background transition hover:opacity-90 cursor-pointer">
                 <Plus size={13} /> Add Box
               </button>
             </div>
-            <div className="space-y-1 max-h-[140px] overflow-y-auto">
+            <div className="max-h-[220px] space-y-1 overflow-y-auto sm:max-h-[180px]">
               {boxes.map((box) => (
                 <div key={box.id} onClick={() => setSelectedBoxId(box.id)}
                   className={`flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition border ${
@@ -468,7 +468,7 @@ function RouteComponent() {
                   onKeyDown={(e) => e.key === 'Enter' && commitPendingHistory()}
                   className="w-full bg-muted border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-ring font-mono text-foreground" />
               </div>
-              <div className="border-t border-border pt-2 space-y-2">
+              <div className="space-y-2 border-t border-border pt-2">
                 <div className="flex flex-wrap items-center gap-2 rounded border border-border bg-background/70 p-2">
                   {(['X', 'Y', 'Z'] as const).map((axis) => (
                     <div key={axis} className="flex items-center gap-1">
@@ -494,23 +494,23 @@ function RouteComponent() {
                   const minKey = `min${axis}` as 'minX' | 'minY' | 'minZ';
                   const maxKey = `max${axis}` as 'maxX' | 'maxY' | 'maxZ';
                   return (
-                    <div key={axis} className="grid grid-cols-12 gap-2 items-center bg-muted p-2 rounded border border-border">
-                      <span className="col-span-1 text-xs font-bold text-muted-foreground text-center font-mono">{axis}</span>
-                      <div className="col-span-11 space-y-1.5">
+                    <div key={axis} className="grid grid-cols-1 gap-2 rounded border border-border bg-muted p-2 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
+                      <span className="text-center font-mono text-xs font-bold text-muted-foreground sm:text-left">{axis}</span>
+                      <div className="space-y-1.5">
                         {[['Min', minKey], ['Max', maxKey]].map(([label, key]) => (
-                          <div key={key} className="flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground font-mono w-6">{label}</span>
+                          <div key={key} className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
+                            <span className="w-6 font-mono text-[10px] text-muted-foreground">{label}</span>
                             <input type="range" min="0" max="16" step="0.25"
                               value={selectedBox[key as keyof CollisionBox] as number}
                               onChange={(e) => updateBoxAttribute(selectedBox.id, key as keyof CollisionBox, parseFloat(e.target.value))}
                               onMouseUp={commitPendingHistory}
-                              className="flex-1 h-1 bg-border rounded appearance-none accent-foreground" />
+                              className="h-1 flex-1 appearance-none rounded bg-border accent-foreground" />
                             <input type="number" step="0.5"
                               value={selectedBox[key as keyof CollisionBox] as number}
                               onChange={(e) => updateBoxAttribute(selectedBox.id, key as keyof CollisionBox, parseFloat(e.target.value) || 0)}
                               onBlur={commitPendingHistory}
                               onKeyDown={(e) => e.key === 'Enter' && commitPendingHistory()}
-                              className="w-10 bg-background text-center rounded border border-border text-[11px] font-mono py-0.5 text-foreground" />
+                              className="w-full rounded border border-border bg-background py-0.5 text-center font-mono text-[11px] text-foreground sm:w-12" />
                           </div>
                         ))}
                       </div>

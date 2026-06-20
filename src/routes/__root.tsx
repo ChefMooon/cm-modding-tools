@@ -77,41 +77,43 @@ function RootComponent() {
   return (
     <div className="min-h-screen flex flex-col antialiased app-shell">
       <header className="w-full border-b app-surface-muted app-border">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2 font-sans tracking-tight font-bold text-foreground hover:opacity-80 transition-opacity">
-              <span className="bg-foreground text-background px-2 py-0.5 rounded text-xs font-mono">CM</span>
-              Modding Tools
-            </Link>
-
-            <nav className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
-              <Link to="/" className="transition-colors hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">
-                Home
+        <div className="mx-auto flex max-w-screen-2xl flex-col gap-3 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-8">
+              <Link to="/" className="flex items-center gap-2 font-sans text-sm font-bold tracking-tight text-foreground transition-opacity hover:opacity-80 sm:text-base">
+                <span className="rounded bg-foreground px-2 py-0.5 font-mono text-xs text-background">CM</span>
+                Modding Tools
               </Link>
-              <Link to="/collision-box" className="transition-colors hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">
-                Collision Box Builder
-              </Link>
-            </nav>
-          </div>
 
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Link to="/about" className="transition-colors hover:text-foreground [&.active]:text-foreground [&.active]:font-semibold">
-              About
-            </Link>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="inline-flex min-w-[7.25rem] items-center justify-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition hover:bg-muted"
-              aria-label="Toggle color theme"
-            >
-              {getThemeIcon()}
-              <span className="hidden sm:inline">{getThemeLabel()}</span>
-            </button>
+              <nav className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted-foreground sm:gap-4">
+                <Link to="/" className="transition-colors hover:text-foreground [&.active]:font-semibold [&.active]:text-foreground">
+                  Home
+                </Link>
+                <Link to="/collision-box" className="transition-colors hover:text-foreground [&.active]:font-semibold [&.active]:text-foreground">
+                  Collision Box Builder
+                </Link>
+              </nav>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground sm:justify-end">
+              <Link to="/about" className="transition-colors hover:text-foreground [&.active]:font-semibold [&.active]:text-foreground">
+                About
+              </Link>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="inline-flex min-w-[6.5rem] items-center justify-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition hover:bg-muted"
+                aria-label="Toggle color theme"
+              >
+                {getThemeIcon()}
+                <span className="hidden sm:inline">{getThemeLabel()}</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-screen-2xl w-full mx-auto p-6 sm:p-8 flex flex-col">
+      <main className="mx-auto flex w-full flex-1 max-w-screen-2xl flex-col p-4 sm:p-6 sm:p-8 lg:p-8">
         <Outlet />
       </main>
 

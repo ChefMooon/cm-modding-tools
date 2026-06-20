@@ -56,7 +56,7 @@ export function CollisionViewport({ boxes, selectedBoxId, moveAxis, moveStep, on
 
   return (
     <div
-      className="w-full h-[520px] sm:h-[560px] lg:h-[640px] xl:h-[720px] bg-muted rounded-lg overflow-hidden border border-border relative"
+      className="relative h-[340px] w-full overflow-hidden rounded-lg border border-border bg-muted sm:h-[420px] md:h-[480px] lg:h-[640px] xl:h-[720px]"
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
@@ -130,24 +130,24 @@ export function CollisionViewport({ boxes, selectedBoxId, moveAxis, moveStep, on
         })}
       </Canvas>
 
-      <div className="absolute inset-x-2.5 top-2.5 flex items-center justify-between gap-2 pointer-events-none select-none">
-        <div className="flex gap-1.5 pointer-events-none">
-          <span className="bg-background text-red-500 text-[10px] font-mono px-1.5 py-0.5 rounded border border-border">North (-Z)</span>
-          <span className="bg-background text-blue-500 text-[10px] font-mono px-1.5 py-0.5 rounded border border-border">West (-X)</span>
+      <div className="pointer-events-none absolute left-2.5 top-2.5 right-2.5 flex flex-wrap items-start justify-between gap-2 select-none">
+        <div className="flex flex-wrap gap-1.5 pointer-events-none">
+          <span className="rounded border border-border bg-background/95 px-1.5 py-0.5 font-mono text-[10px] text-red-500 shadow-sm">North (-Z)</span>
+          <span className="rounded border border-border bg-background/95 px-1.5 py-0.5 font-mono text-[10px] text-blue-500 shadow-sm">West (-X)</span>
         </div>
-        <div className="pointer-events-auto flex items-center gap-1 rounded border border-border bg-background/90 px-1.5 py-1 shadow-sm">
+        <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1 rounded border border-border bg-background/95 px-1.5 py-1 shadow-sm">
           {(['X', 'Y', 'Z'] as const).map((axis) => (
             <button
               key={axis}
               type="button"
               onClick={() => onMoveAxisChange(axis)}
-              className={`rounded px-2 py-0.5 text-[10px] font-medium transition ${moveAxis === axis ? 'bg-foreground text-background' : 'text-foreground hover:bg-accent'}`}
+              className={`min-w-[1.45rem] rounded px-1.5 py-0.5 text-[10px] font-semibold transition ${moveAxis === axis ? 'bg-foreground text-background' : 'text-foreground hover:bg-accent'}`}
             >
               {axis}
             </button>
           ))}
-          <label className="ml-1 flex items-center gap-1 text-[10px] text-muted-foreground">
-            <span>Step</span>
+          <label className="flex items-center gap-1 rounded border border-border bg-background px-1 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <span className="whitespace-nowrap">S</span>
             <select
               value={moveStep}
               onChange={(event) => {
@@ -156,7 +156,7 @@ export function CollisionViewport({ boxes, selectedBoxId, moveAxis, moveStep, on
                   onMoveStepChange(nextStep);
                 }
               }}
-              className="rounded border border-border bg-background px-1 py-0.5 text-[10px] text-foreground"
+              className="rounded border-0 bg-transparent px-0.5 py-0 text-[10px] font-medium text-foreground outline-none"
             >
               {[0.25, 0.5, 1, 2].map((step) => (
                 <option key={step} value={step}>
