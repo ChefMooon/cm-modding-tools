@@ -16,3 +16,6 @@ This repository is a Vite-powered React 19 + TypeScript single-page app with Tan
 - Prefer small, focused changes that match existing patterns in the current route or component.
 - When adding a new page, follow the existing file-based routing pattern used by [src/routes](src/routes).
 - Before claiming completion, verify changes with `npm run build` and `npm run lint`.
+
+# Rules
+- When creating UI elements ensure that if the value is dynamic the size of the element does not change when the value changes. This is to prevent layout shifts and improve user experience.
