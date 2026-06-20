@@ -77,7 +77,7 @@ function RootComponent() {
   return (
     <div className="min-h-screen flex flex-col antialiased app-shell">
       <header className="w-full border-b app-surface-muted app-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2 font-sans tracking-tight font-bold text-foreground hover:opacity-80 transition-opacity">
               <span className="bg-foreground text-background px-2 py-0.5 rounded text-xs font-mono">CM</span>
@@ -111,12 +111,12 @@ function RootComponent() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 flex flex-col">
+      <main className="flex-1 max-w-screen-2xl w-full mx-auto p-6 sm:p-8 flex flex-col">
         <Outlet />
       </main>
 
       <footer className="w-full border-t app-surface-muted text-xs text-muted-foreground font-sans mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-center">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-center">
           <div>&copy; {new Date().getFullYear()} CM Modding Tools.</div>
         </div>
       </footer>

@@ -24,7 +24,7 @@ export function CollisionViewport({ boxes, selectedBoxId, onSelectBox }: Viewpor
   }
 
   return (
-    <div className="w-full h-[500px] bg-muted rounded-lg overflow-hidden border border-border relative">
+    <div className="w-full h-[520px] sm:h-[560px] lg:h-[640px] xl:h-[720px] bg-muted rounded-lg overflow-hidden border border-border relative">
       <Canvas camera={{ position: [2.2, 2.2, 3.2], fov: 45 }}>
         <ambientLight intensity={0.9} />
         <directionalLight position={[10, 15, 10]} intensity={0.4} />

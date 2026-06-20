@@ -127,7 +127,7 @@ function RouteComponent() {
   };
 
   return (
-    <div className="p-4 max-w-7xl mx-auto space-y-4 text-foreground app-shell min-h-screen">
+    <div className="w-full max-w-screen-2xl mx-auto space-y-4 text-foreground app-shell min-h-screen">
       <div className="flex items-center justify-between border-b border-border pb-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Voxel Collision Builder</h1>
@@ -163,8 +163,8 @@ function RouteComponent() {
         <JSONImport isOpen={showImportModal} onClose={() => setShowImportModal(false)} onImport={handleImport} />
       ) : null}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-        <div className="lg:col-span-2 space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)] gap-4 items-start">
+        <div className="min-w-0 space-y-3">
           <CollisionViewport boxes={boxes} selectedBoxId={selectedBoxId} onSelectBox={setSelectedBoxId} />
 
           <div className="p-3 bg-muted border border-border rounded-lg">
@@ -175,7 +175,7 @@ function RouteComponent() {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="w-full lg:max-w-[360px] space-y-4">
           <div className="bg-card border border-border rounded-lg p-3 space-y-2">
             <div className="flex justify-between items-center">
               <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">Elements</h2>
