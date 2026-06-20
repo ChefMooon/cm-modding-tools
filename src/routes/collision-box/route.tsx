@@ -98,19 +98,19 @@ function RouteComponent() {
   };
 
   return (
-    <div className="p-4 max-w-7xl mx-auto space-y-4 text-zinc-900 bg-white min-h-screen">
-      <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+    <div className="p-4 max-w-7xl mx-auto space-y-4 text-foreground app-shell min-h-screen">
+      <div className="flex items-center justify-between border-b border-border pb-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-zinc-900">Voxel Collision Builder</h1>
-          <p className="text-xs text-zinc-400">Construct complex compound Minecraft VoxelShapes interactively.</p>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Voxel Collision Builder</h1>
+          <p className="text-xs text-muted-foreground">Construct complex compound Minecraft VoxelShapes interactively.</p>
         </div>
-        <div className="flex gap-1 bg-zinc-100 p-1 rounded-md border border-zinc-200">
+        <div className="flex gap-1 bg-muted p-1 rounded-md border border-border">
           <button disabled={history.length === 0} onClick={handleUndo}
-            className="p-1.5 hover:bg-zinc-200 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
+            className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
             <Undo2 size={15} />
           </button>
           <button disabled={redoStack.length === 0} onClick={handleRedo}
-            className="p-1.5 hover:bg-zinc-200 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
+            className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
             <Redo2 size={15} />
           </button>
         </div>
@@ -119,22 +119,21 @@ function RouteComponent() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <div className="lg:col-span-2 space-y-3">
           <CollisionViewport boxes={boxes} selectedBoxId={selectedBoxId} onSelectBox={setSelectedBoxId} />
-          
-          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-lg">
-            <h3 className="text-xs font-medium text-zinc-400 mb-1.5">Java Code Output</h3>
-            <pre className="text-xs text-amber-600 overflow-x-auto p-2 bg-white rounded border border-zinc-200 font-mono select-all">
+
+          <div className="p-3 bg-muted border border-border rounded-lg">
+            <h3 className="text-xs font-medium text-muted-foreground mb-1.5">Java Code Output</h3>
+            <pre className="text-xs text-amber-600 overflow-x-auto p-2 bg-background rounded border border-border font-mono select-all">
   {`public static final VoxelShape SHAPE = VoxelShapes.or(\n${boxes.map(b => `  Block.box(${b.minX}, ${b.minY}, ${b.minZ}, ${b.maxX}, ${b.maxY}, ${b.maxZ})`).join(',\n')}\n);`}
             </pre>
           </div>
         </div>
 
         <div className="space-y-4">
-          {/* Elements list */}
-          <div className="bg-white border border-zinc-200 rounded-lg p-3 space-y-2">
+          <div className="bg-card border border-border rounded-lg p-3 space-y-2">
             <div className="flex justify-between items-center">
-              <h2 className="text-xs font-medium tracking-wider text-zinc-400 uppercase">Elements</h2>
+              <h2 className="text-xs font-medium tracking-wider text-muted-foreground uppercase">Elements</h2>
               <button onClick={addNewBox}
-                className="flex items-center gap-1 text-xs bg-zinc-900 text-white font-medium hover:bg-zinc-700 transition px-2 py-1 rounded cursor-pointer">
+                className="flex items-center gap-1 text-xs bg-foreground text-background font-medium hover:opacity-90 transition px-2 py-1 rounded cursor-pointer">
                 <Plus size={13} /> Add Box
               </button>
             </div>
@@ -143,15 +142,15 @@ function RouteComponent() {
                 <div key={box.id} onClick={() => setSelectedBoxId(box.id)}
                   className={`flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition border ${
                     selectedBoxId === box.id
-                      ? 'bg-zinc-100 border-zinc-300 text-zinc-900'
-                      : 'bg-transparent border-transparent hover:border-zinc-200 text-zinc-500'
+                      ? 'bg-muted border-border text-foreground'
+                      : 'bg-transparent border-transparent hover:border-border text-muted-foreground'
                   }`}>
                   <span className="font-mono truncate max-w-[150px]">{box.name || 'unnamed'}</span>
                   <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => toggleVisibility(box.id)} className="p-1 text-zinc-400 hover:text-zinc-700 cursor-pointer">
+                    <button onClick={() => toggleVisibility(box.id)} className="p-1 text-muted-foreground hover:text-foreground cursor-pointer">
                       {box.visible ? <Eye size={13} /> : <EyeOff size={13} />}
                     </button>
-                    <button onClick={() => removeBox(box.id)} className="p-1 text-zinc-400 hover:text-red-500 cursor-pointer">
+                    <button onClick={() => removeBox(box.id)} className="p-1 text-muted-foreground hover:text-red-500 cursor-pointer">
                       <Trash2 size={13} />
                     </button>
                   </div>
@@ -160,34 +159,33 @@ function RouteComponent() {
             </div>
           </div>
 
-          {/* Coordinate editor */}
           {selectedBox ? (
-            <div className="bg-white border border-zinc-200 rounded-lg p-3 space-y-3">
+            <div className="bg-card border border-border rounded-lg p-3 space-y-3">
               <div>
-                <label className="text-[11px] font-medium text-zinc-400 block mb-1">Element Name</label>
+                <label className="text-[11px] font-medium text-muted-foreground block mb-1">Element Name</label>
                 <input type="text" value={selectedBox.name}
                   onChange={(e) => updateBoxAttribute(selectedBox.id, 'name', e.target.value)}
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-zinc-400 font-mono text-zinc-800" />
+                  className="w-full bg-muted border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-ring font-mono text-foreground" />
               </div>
-              <div className="border-t border-zinc-100 pt-2 space-y-2">
+              <div className="border-t border-border pt-2 space-y-2">
                 {(['X', 'Y', 'Z'] as const).map((axis) => {
                   const minKey = `min${axis}` as 'minX' | 'minY' | 'minZ';
                   const maxKey = `max${axis}` as 'maxX' | 'maxY' | 'maxZ';
                   return (
-                    <div key={axis} className="grid grid-cols-12 gap-2 items-center bg-zinc-50 p-2 rounded border border-zinc-100">
-                      <span className="col-span-1 text-xs font-bold text-zinc-400 text-center font-mono">{axis}</span>
+                    <div key={axis} className="grid grid-cols-12 gap-2 items-center bg-muted p-2 rounded border border-border">
+                      <span className="col-span-1 text-xs font-bold text-muted-foreground text-center font-mono">{axis}</span>
                       <div className="col-span-11 space-y-1.5">
                         {[['Min', minKey], ['Max', maxKey]].map(([label, key]) => (
                           <div key={key} className="flex items-center gap-2">
-                            <span className="text-[10px] text-zinc-400 font-mono w-6">{label}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono w-6">{label}</span>
                             <input type="range" min="0" max="16" step="0.25"
                               value={selectedBox[key as keyof CollisionBox] as number}
                               onChange={(e) => updateBoxAttribute(selectedBox.id, key as keyof CollisionBox, parseFloat(e.target.value))}
-                              className="flex-1 h-1 bg-zinc-200 rounded appearance-none accent-zinc-800" />
+                              className="flex-1 h-1 bg-border rounded appearance-none accent-foreground" />
                             <input type="number" step="0.5"
                               value={selectedBox[key as keyof CollisionBox] as number}
                               onChange={(e) => updateBoxAttribute(selectedBox.id, key as keyof CollisionBox, parseFloat(e.target.value) || 0)}
-                              className="w-10 bg-white text-center rounded border border-zinc-200 text-[11px] font-mono py-0.5 text-zinc-700" />
+                              className="w-10 bg-background text-center rounded border border-border text-[11px] font-mono py-0.5 text-foreground" />
                           </div>
                         ))}
                       </div>
@@ -197,7 +195,7 @@ function RouteComponent() {
               </div>
             </div>
           ) : (
-            <div className="text-center p-4 border border-dashed border-zinc-200 rounded-lg text-zinc-400 text-xs">
+            <div className="text-center p-4 border border-dashed border-border rounded-lg text-muted-foreground text-xs">
               Select or add an element.
             </div>
           )}
