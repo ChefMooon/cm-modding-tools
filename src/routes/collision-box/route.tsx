@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CollisionBox, MoveAxis } from './types'
 import { CollisionViewport } from './-components/CollisionViewport'
 import { JSONImport } from './-components/JSONImport'
-import { Plus, Trash2, Eye, EyeOff, Undo2, Redo2, FileJson2, RotateCcw } from 'lucide-react'
+import { Plus, Trash2, Eye, EyeOff, Undo2, Redo2, FileJson2, RotateCcw, Copy, ChevronDown, ChevronUp } from 'lucide-react'
 
 type NumericCoordKey = 'minX' | 'minY' | 'minZ' | 'maxX' | 'maxY' | 'maxZ';
+type OutputFlavor = 'standard' | 'absolute';
 
 const DEFAULT_BOXES: CollisionBox[] = [];
 
@@ -21,6 +22,10 @@ function RouteComponent() {
   const [moveAxis, setMoveAxis] = useState<MoveAxis>('X');
   const [moveStep, setMoveStep] = useState<number>(1);
   const [copiedBox, setCopiedBox] = useState<CollisionBox | null>(null);
+  const [shapeVariableName, setShapeVariableName] = useState('SHAPE');
+  const [includeElementComments, setIncludeElementComments] = useState(true);
+  const [outputFlavor, setOutputFlavor] = useState<OutputFlavor>('standard');
+  const [showOutputOptions, setShowOutputOptions] = useState(false);
   
   // History tracking arrays
   const [history, setHistory] = useState<CollisionBox[][]>([]);
@@ -31,6 +36,147 @@ function RouteComponent() {
   const selectedBox = boxes.find(b => b.id === selectedBoxId);
 
   const clampCoordValue = (value: number) => Math.max(0, Math.min(16, Number(value.toFixed(2))));
+
+  const formatBoxDimensions = (box: CollisionBox) => [box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ].join(', ');
+
+  const formatAbsoluteDoubleValue = (value: number) => {
+    const normalized = Number((value / 16).toFixed(4));
+    const stringValue = Number.isInteger(normalized) ? normalized.toFixed(1) : normalized.toFixed(4);
+    return `${stringValue}D`;
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+    } catch {
+      // Fall back to the legacy execCommand path below.
+    }
+
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+  };
+
+  const copyBoxDimensions = async (box: CollisionBox) => {
+    const rawDimensions = formatBoxDimensions(box);
+    await copyToClipboard(rawDimensions);
+  };
+
+  const getIndividualBoxCopyValue = (box: CollisionBox) => {
+    const values = outputFlavor === 'absolute'
+      ? [box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ].map(formatAbsoluteDoubleValue)
+      : [box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ];
+
+    return `(${values.join(', ')})`;
+  };
+
+  const getIndividualBoxSnippets = useMemo(() => {
+    return boxes.map((box) => {
+      const baseLine = outputFlavor === 'absolute'
+        ? `Shapes.box(${[box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ].map(formatAbsoluteDoubleValue).join(', ')})`
+        : `Block.box(${[box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ].join(', ')})`;
+
+      if (!includeElementComments || !box.name.trim()) {
+        return baseLine;
+      }
+
+      const comment = ` // ${box.name.trim()}`;
+      return baseLine + comment;
+    });
+  }, [boxes, includeElementComments, outputFlavor]);
+
+  const generatedJavaOutput = useMemo(() => {
+    const normalizedVariableName = shapeVariableName.trim() || 'SHAPE';
+    const boxLines = getIndividualBoxSnippets;
+
+    if (boxes.length === 1) {
+      return [
+        `public static final VoxelShape ${normalizedVariableName} = ${boxLines[0]};`,
+        '',
+      ].join('\n');
+    }
+
+    if (boxes.length === 0) {
+      return [
+        `public static final VoxelShape ${normalizedVariableName} = Shapes.or(`,
+        ');',
+        '',
+      ].join('\n');
+    }
+
+    const renderedLines = boxLines.map((line, index) => {
+      const suffix = index < boxLines.length - 1 ? ',' : '';
+      return `    ${line}${suffix}`;
+    });
+
+    return [
+      `public static final VoxelShape ${normalizedVariableName} = Shapes.or(`,
+      ...renderedLines,
+      ');',
+      '',
+    ].join('\n');
+  }, [boxes, getIndividualBoxSnippets, shapeVariableName]);
+
+  const snippetRows = useMemo<Array<{ content: string; copyValue?: string }>>(() => {
+    const normalizedVariableName = shapeVariableName.trim() || 'SHAPE';
+    const boxLines = getIndividualBoxSnippets;
+
+    if (boxes.length === 1) {
+      return [
+        { content: `public static final VoxelShape ${normalizedVariableName} = ${boxLines[0]};` },
+      ];
+    }
+
+    if (boxes.length === 0) {
+      return [
+        { content: `public static final VoxelShape ${normalizedVariableName} = Shapes.or(` },
+        { content: ');' },
+      ];
+    }
+
+    return [
+      { content: `public static final VoxelShape ${normalizedVariableName} = Shapes.or(` },
+      ...boxLines.map((line, index) => ({
+        content: `    ${line}${index < boxLines.length - 1 ? ',' : ''}`,
+        copyValue: getIndividualBoxCopyValue(boxes[index]),
+      })),
+      { content: ');' },
+    ];
+  }, [boxes, getIndividualBoxCopyValue, getIndividualBoxSnippets, shapeVariableName]);
+
+  const redundancyWarnings = useMemo(() => {
+    const warnings = new Set<string>();
+
+    boxes.forEach((box, index) => {
+      boxes.forEach((otherBox, otherIndex) => {
+        if (index === otherIndex) return;
+
+        const isEnclosed = box.minX <= otherBox.minX
+          && box.minY <= otherBox.minY
+          && box.minZ <= otherBox.minZ
+          && box.maxX >= otherBox.maxX
+          && box.maxY >= otherBox.maxY
+          && box.maxZ >= otherBox.maxZ;
+
+        if (isEnclosed) {
+          const outerName = box.name.trim() || 'unnamed';
+          const innerName = otherBox.name.trim() || 'unnamed';
+          warnings.add(`${innerName} is fully enclosed by ${outerName} and may be redundant.`);
+        }
+      });
+    });
+
+    return Array.from(warnings);
+  }, [boxes]);
 
   const saveHistoryState = (currentBoxes: CollisionBox[]) => {
     setHistory(prev => [...prev, currentBoxes]);
@@ -419,11 +565,105 @@ function RouteComponent() {
             onMoveBox={moveBoxByDelta}
           />
 
-          <div className="rounded-lg border border-border bg-muted p-3">
-            <h3 className="mb-1.5 text-xs font-medium text-muted-foreground">Java Code Output</h3>
-            <pre className="overflow-x-auto rounded border border-border bg-background p-2 font-mono text-[11px] text-amber-600 select-all sm:text-xs">
-  {`public static final VoxelShape SHAPE = VoxelShapes.or(\n${boxes.map(b => `  Block.box(${b.minX}, ${b.minY}, ${b.minZ}, ${b.maxX}, ${b.maxY}, ${b.maxZ})`).join(',\n')}\n);`}
-            </pre>
+          <div className="rounded-lg border border-border bg-muted p-3 space-y-3">
+            <div className="space-y-3 rounded border border-border bg-background/70 p-2.5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <h3 className="text-xs font-medium text-muted-foreground">Java Code Output</h3>
+                  <p className="text-[10px] text-muted-foreground">Generate clean, copy-ready registration code for your current shape set.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowOutputOptions((current) => !current)}
+                  aria-expanded={showOutputOptions}
+                  className="flex items-center gap-1.5 rounded border border-border bg-background px-2.5 py-1.5 text-[11px] font-medium text-foreground transition hover:bg-muted"
+                >
+                  {showOutputOptions ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  {showOutputOptions ? 'Hide options' : 'Show options'}
+                </button>
+              </div>
+
+              {showOutputOptions ? (
+                <div className="space-y-2 rounded border border-border/70 bg-muted/40 p-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <label className="flex items-center gap-2 rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={includeElementComments}
+                        onChange={(event) => setIncludeElementComments(event.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-border accent-foreground"
+                      />
+                      <span>Include Element Comments</span>
+                    </label>
+                    <select
+                      value={outputFlavor}
+                      onChange={(event) => setOutputFlavor(event.target.value as OutputFlavor)}
+                      className="rounded border border-border bg-background px-2 py-1 text-[11px] text-foreground"
+                    >
+                      <option value="standard">Standard (Block.box)</option>
+                      <option value="absolute">Absolute Doubles (Shapes.box)</option>
+                    </select>
+                  </div>
+                  <label className="block text-[11px] font-medium text-muted-foreground">
+                    Variable Name
+                    <input
+                      type="text"
+                      value={shapeVariableName}
+                      onChange={(event) => setShapeVariableName(event.target.value)}
+                      onBlur={() => setShapeVariableName((current) => current.trim() || 'SHAPE')}
+                      className="mt-1 w-full rounded border border-border bg-background px-2 py-1 font-mono text-[11px] text-foreground"
+                      placeholder="SHAPE"
+                    />
+                  </label>
+                </div>
+              ) : null}
+            </div>
+
+            {redundancyWarnings.length > 0 ? (
+              <div className="rounded border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-700">
+                <div className="font-medium">Structural warning</div>
+                <ul className="mt-1 list-disc space-y-1 pl-4">
+                  {redundancyWarnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <div className="rounded border border-border bg-background overflow-hidden">
+              <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/50 px-2 py-1.5">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Code Snippet</span>
+                <button
+                  type="button"
+                  onClick={() => void copyToClipboard(generatedJavaOutput)}
+                  className="rounded px-2 py-1 text-[10px] font-medium text-foreground bg-foreground/10 hover:bg-foreground/20 transition"
+                  title="Copy entire snippet"
+                >
+                  <Copy className="inline mr-1 h-3 w-3" /> Copy All
+                </button>
+              </div>
+              <div className="overflow-x-auto border-t border-border bg-muted/40 p-2 font-mono text-[11px] text-amber-600 sm:text-xs">
+                {snippetRows.map((row, index) => (
+                  <div key={`snippet-row-${index}`} className="flex min-h-[1.25rem] items-center justify-between gap-2">
+                    <span className="min-w-0 whitespace-pre-wrap break-words">{row.content}</span>
+                    {row.copyValue !== undefined ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (row.copyValue !== undefined) {
+                            void copyToClipboard(row.copyValue)
+                          }
+                        }}
+                        className="flex-shrink-0 rounded px-2 py-1 text-[10px] font-medium text-foreground bg-foreground/10 hover:bg-foreground/20 transition"
+                        title="Copy element values"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -446,6 +686,15 @@ function RouteComponent() {
                   }`}>
                   <span className="font-mono truncate max-w-[150px]">{box.name || 'unnamed'}</span>
                   <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => void copyBoxDimensions(box)}
+                      className="p-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                      title="Copy dimensions"
+                      aria-label={`Copy dimensions for ${box.name || 'unnamed'}`}
+                    >
+                      <Copy size={13} />
+                    </button>
                     <button onClick={() => toggleVisibility(box.id)} className="p-1 text-muted-foreground hover:text-foreground cursor-pointer">
                       {box.visible ? <Eye size={13} /> : <EyeOff size={13} />}
                     </button>
