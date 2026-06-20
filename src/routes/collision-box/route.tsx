@@ -17,8 +17,10 @@ function RouteComponent() {
   const [boxes, setBoxes] = useState<CollisionBox[]>(() => DEFAULT_BOXES.map(box => ({ ...box })));
   const [selectedBoxId, setSelectedBoxId] = useState<string>('');
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [moveAxis, setMoveAxis] = useState<MoveAxis>('X');
   const [moveStep, setMoveStep] = useState<number>(1);
+  const [copiedBox, setCopiedBox] = useState<CollisionBox | null>(null);
   
   // History tracking arrays
   const [history, setHistory] = useState<CollisionBox[][]>([]);
@@ -87,6 +89,22 @@ function RouteComponent() {
     setSelectedBoxId(newId);
   };
 
+  const duplicateSelectedBox = () => {
+    if (!selectedBox) return;
+
+    saveHistoryState(boxes);
+    const duplicatedBox: CollisionBox = {
+      ...selectedBox,
+      id: crypto.randomUUID(),
+      name: `${selectedBox.name || 'unnamed'}_copy`,
+      visible: selectedBox.visible,
+    };
+
+    const nextBoxes = [...boxes, duplicatedBox];
+    setBoxes(nextBoxes);
+    setSelectedBoxId(duplicatedBox.id);
+  };
+
   const removeBox = (id: string) => {
     saveHistoryState(boxes);
     const remaining = boxes.filter(b => b.id !== id);
@@ -99,6 +117,23 @@ function RouteComponent() {
   const toggleVisibility = (id: string) => {
     saveHistoryState(boxes);
     setBoxes(boxes.map(b => b.id === id ? { ...b, visible: !b.visible } : b));
+  };
+
+  const resetSelectedBox = () => {
+    if (!selectedBox) return;
+
+    saveHistoryState(boxes);
+    const resetBox: CollisionBox = {
+      ...selectedBox,
+      minX: 4,
+      minY: 2,
+      minZ: 4,
+      maxX: 12,
+      maxY: 10,
+      maxZ: 12,
+    };
+
+    setBoxes(boxes.map(box => box.id === selectedBox.id ? resetBox : box));
   };
 
   const updateBoxAttribute = (id: string, key: keyof CollisionBox, value: CollisionBox[keyof CollisionBox]) => {
@@ -184,13 +219,109 @@ function RouteComponent() {
   }, [getEffectiveStep, moveBoxByDelta, selectedBox]);
 
   useEffect(() => {
-    if (!selectedBox) return;
-
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       const isTypingTarget = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || (target?.isContentEditable ?? false);
+      const isModifierPressed = event.ctrlKey || event.metaKey;
 
-      if (isTypingTarget) return;
+      if (isModifierPressed && !event.altKey) {
+        const key = event.key.toLowerCase();
+
+        if (key === 'z') {
+          event.preventDefault();
+          if (event.shiftKey) {
+            handleRedo();
+          } else {
+            handleUndo();
+          }
+          return;
+        }
+
+        if (key === 'y') {
+          event.preventDefault();
+          handleRedo();
+          return;
+        }
+
+        if (key === 'c' && selectedBox && !isTypingTarget) {
+          event.preventDefault();
+          setCopiedBox({ ...selectedBox });
+          return;
+        }
+
+        if (key === 'v' && copiedBox && !isTypingTarget) {
+          event.preventDefault();
+          saveHistoryState(boxes);
+          const pastedBox: CollisionBox = {
+            ...copiedBox,
+            id: crypto.randomUUID(),
+            name: `${copiedBox.name || 'unnamed'}_copy`,
+          };
+          const nextBoxes = [...boxes, pastedBox];
+          setBoxes(nextBoxes);
+          setSelectedBoxId(pastedBox.id);
+          return;
+        }
+      }
+
+      if (isTypingTarget) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          setSelectedBoxId('');
+        }
+        return;
+      }
+
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        if (!selectedBox) return;
+        event.preventDefault();
+        removeBox(selectedBox.id);
+        return;
+      }
+
+      if (event.key === 'n' || event.key === 'N') {
+        event.preventDefault();
+        addNewBox();
+        return;
+      }
+
+      if (event.key === 'd' || event.key === 'D') {
+        event.preventDefault();
+        duplicateSelectedBox();
+        return;
+      }
+
+      if (event.key === 'v' || event.key === 'V') {
+        if (!selectedBox) return;
+        event.preventDefault();
+        toggleVisibility(selectedBox.id);
+        return;
+      }
+
+      if (event.key === 'r' || event.key === 'R') {
+        event.preventDefault();
+        resetSelectedBox();
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setSelectedBoxId('');
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        if (boxes.length === 0) return;
+        const currentIndex = boxes.findIndex(box => box.id === selectedBoxId);
+        const nextIndex = event.shiftKey
+          ? (currentIndex <= 0 ? boxes.length - 1 : currentIndex - 1)
+          : (currentIndex === -1 || currentIndex >= boxes.length - 1 ? 0 : currentIndex + 1);
+        setSelectedBoxId(boxes[nextIndex].id);
+        return;
+      }
+
+      if (!selectedBox) return;
 
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
         event.preventDefault();
@@ -201,39 +332,74 @@ function RouteComponent() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [moveAxis, moveStep, nudgeSelectedBox, selectedBox]);
+  }, [addNewBox, boxes, copiedBox, duplicateSelectedBox, handleRedo, handleUndo, moveAxis, moveStep, nudgeSelectedBox, removeBox, resetSelectedBox, saveHistoryState, selectedBox, selectedBoxId, toggleVisibility]);
 
   return (
     <div className="w-full max-w-screen-2xl mx-auto space-y-4 text-foreground app-shell min-h-screen">
-      <div className="flex items-center justify-between border-b border-border pb-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Voxel Collision Builder</h1>
-          <p className="text-xs text-muted-foreground">Construct complex compound Minecraft VoxelShapes interactively.</p>
+      <div className="border-b border-border pb-3 space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Voxel Collision Builder</h1>
+            <p className="text-xs text-muted-foreground">Construct complex compound Minecraft VoxelShapes interactively.</p>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-1 bg-muted p-1 rounded-md border border-border">
+            <button
+              type="button"
+              onClick={() => setShowShortcutsHelp(prev => !prev)}
+              className="rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent"
+            >
+              {showShortcutsHelp ? 'Hide Shortcuts' : 'Shortcuts'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent"
+            >
+              <FileJson2 size={13} /> Import
+            </button>
+            <button
+              type="button"
+              onClick={resetBuilder}
+              className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent"
+            >
+              <RotateCcw size={13} /> Reset
+            </button>
+            <button disabled={history.length === 0} onClick={handleUndo}
+              className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
+              <Undo2 size={15} />
+            </button>
+            <button disabled={redoStack.length === 0} onClick={handleRedo}
+              className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
+              <Redo2 size={15} />
+            </button>
+          </div>
         </div>
-        <div className="flex gap-1 bg-muted p-1 rounded-md border border-border">
-          <button
-            type="button"
-            onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent"
-          >
-            <FileJson2 size={13} /> Import
-          </button>
-          <button
-            type="button"
-            onClick={resetBuilder}
-            className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent"
-          >
-            <RotateCcw size={13} /> Reset
-          </button>
-          <button disabled={history.length === 0} onClick={handleUndo}
-            className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
-            <Undo2 size={15} />
-          </button>
-          <button disabled={redoStack.length === 0} onClick={handleRedo}
-            className="p-1.5 hover:bg-accent rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none cursor-pointer">
-            <Redo2 size={15} />
-          </button>
-        </div>
+
+        {showShortcutsHelp ? (
+          <div className="rounded-lg border border-border bg-muted/70 p-3 text-[11px] text-muted-foreground">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-medium uppercase tracking-wide text-foreground">Keyboard shortcuts</span>
+              <span className="text-[10px] text-muted-foreground">Press once to use</span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between gap-2"><span>Undo / Redo</span><span className="font-mono text-foreground">Ctrl/Cmd + Z / Y</span></div>
+                <div className="flex items-center justify-between gap-2"><span>New box</span><span className="font-mono text-foreground">N</span></div>
+                <div className="flex items-center justify-between gap-2"><span>Duplicate box</span><span className="font-mono text-foreground">D</span></div>
+                <div className="flex items-center justify-between gap-2"><span>Delete box</span><span className="font-mono text-foreground">Delete / Backspace</span></div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between gap-2"><span>Toggle visibility</span><span className="font-mono text-foreground">V</span></div>
+                <div className="flex items-center justify-between gap-2"><span>Reset selected box</span><span className="font-mono text-foreground">R</span></div>
+                <div className="flex items-center justify-between gap-2"><span>Copy / Paste box</span><span className="font-mono text-foreground">Ctrl/Cmd + C / V</span></div>
+                <div className="flex items-center justify-between gap-2"><span>Move selected box</span><span className="font-mono text-foreground">Arrow keys</span></div>
+              </div>
+            </div>
+            <div className="mt-2 text-[10px] text-muted-foreground">
+              Tip: hold Shift for smaller nudges and Ctrl/Cmd for larger nudges while moving with the arrow keys.
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {showImportModal ? (
