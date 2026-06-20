@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useRef, useState } from 'react'
-import type { CollisionBox } from './types'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { CollisionBox, MoveAxis } from './types'
 import { CollisionViewport } from './-components/CollisionViewport'
 import { JSONImport } from './-components/JSONImport'
 import { Plus, Trash2, Eye, EyeOff, Undo2, Redo2, FileJson2, RotateCcw } from 'lucide-react'
@@ -17,6 +17,8 @@ function RouteComponent() {
   const [boxes, setBoxes] = useState<CollisionBox[]>(() => DEFAULT_BOXES.map(box => ({ ...box })));
   const [selectedBoxId, setSelectedBoxId] = useState<string>('');
   const [showImportModal, setShowImportModal] = useState(false);
+  const [moveAxis, setMoveAxis] = useState<MoveAxis>('X');
+  const [moveStep, setMoveStep] = useState<number>(1);
   
   // History tracking arrays
   const [history, setHistory] = useState<CollisionBox[][]>([]);
@@ -25,6 +27,8 @@ function RouteComponent() {
   const isHistoryPendingRef = useRef(false);
 
   const selectedBox = boxes.find(b => b.id === selectedBoxId);
+
+  const clampCoordValue = (value: number) => Math.max(0, Math.min(16, Number(value.toFixed(2))));
 
   const saveHistoryState = (currentBoxes: CollisionBox[]) => {
     setHistory(prev => [...prev, currentBoxes]);
@@ -140,6 +144,65 @@ function RouteComponent() {
     }
   };
 
+  const moveBoxByDelta = useCallback((id: string, axis: MoveAxis, delta: number) => {
+    const roundedDelta = Number(delta.toFixed(2));
+    if (roundedDelta === 0 || !selectedBoxId) return;
+
+    beginPendingHistory(boxes);
+
+    setBoxes(prev => prev.map(box => {
+      if (box.id !== id) return box;
+
+      const updated = { ...box } as CollisionBox;
+
+      if (axis === 'X') {
+        updated.minX = clampCoordValue(box.minX + roundedDelta);
+        updated.maxX = clampCoordValue(box.maxX + roundedDelta);
+      } else if (axis === 'Y') {
+        updated.minY = clampCoordValue(box.minY + roundedDelta);
+        updated.maxY = clampCoordValue(box.maxY + roundedDelta);
+      } else {
+        updated.minZ = clampCoordValue(box.minZ + roundedDelta);
+        updated.maxZ = clampCoordValue(box.maxZ + roundedDelta);
+      }
+
+      return updated;
+    }));
+
+    commitPendingHistory();
+  }, [boxes, selectedBoxId]);
+
+  const getEffectiveStep = useCallback((event?: { shiftKey?: boolean; ctrlKey?: boolean }) => {
+    if (event?.shiftKey) return Math.max(0.25, moveStep / 4);
+    if (event?.ctrlKey) return moveStep * 2;
+    return moveStep;
+  }, [moveStep]);
+
+  const nudgeSelectedBox = useCallback((axis: MoveAxis, direction: -1 | 1, event?: { shiftKey?: boolean; ctrlKey?: boolean }) => {
+    if (!selectedBox) return;
+    moveBoxByDelta(selectedBox.id, axis, direction * getEffectiveStep(event));
+  }, [getEffectiveStep, moveBoxByDelta, selectedBox]);
+
+  useEffect(() => {
+    if (!selectedBox) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTypingTarget = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || (target?.isContentEditable ?? false);
+
+      if (isTypingTarget) return;
+
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        event.preventDefault();
+        const direction = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
+        nudgeSelectedBox(moveAxis, direction as -1 | 1, event);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [moveAxis, moveStep, nudgeSelectedBox, selectedBox]);
+
   return (
     <div className="w-full max-w-screen-2xl mx-auto space-y-4 text-foreground app-shell min-h-screen">
       <div className="flex items-center justify-between border-b border-border pb-3">
@@ -179,7 +242,16 @@ function RouteComponent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)] gap-4 items-start">
         <div className="min-w-0 space-y-3">
-          <CollisionViewport boxes={boxes} selectedBoxId={selectedBoxId} onSelectBox={setSelectedBoxId} />
+          <CollisionViewport
+            boxes={boxes}
+            selectedBoxId={selectedBoxId}
+            moveAxis={moveAxis}
+            moveStep={moveStep}
+            onSelectBox={setSelectedBoxId}
+            onMoveAxisChange={setMoveAxis}
+            onMoveStepChange={setMoveStep}
+            onMoveBox={moveBoxByDelta}
+          />
 
           <div className="p-3 bg-muted border border-border rounded-lg">
             <h3 className="text-xs font-medium text-muted-foreground mb-1.5">Java Code Output</h3>
@@ -231,6 +303,27 @@ function RouteComponent() {
                   className="w-full bg-muted border border-border rounded px-2 py-1 text-xs focus:outline-none focus:border-ring font-mono text-foreground" />
               </div>
               <div className="border-t border-border pt-2 space-y-2">
+                <div className="flex flex-wrap items-center gap-2 rounded border border-border bg-background/70 p-2">
+                  {(['X', 'Y', 'Z'] as const).map((axis) => (
+                    <div key={axis} className="flex items-center gap-1">
+                      <span className="text-[10px] font-medium uppercase text-muted-foreground">{axis}</span>
+                      <button
+                        type="button"
+                        onClick={() => nudgeSelectedBox(axis, -1)}
+                        className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-foreground hover:bg-accent"
+                      >
+                        −
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => nudgeSelectedBox(axis, 1)}
+                        className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] text-foreground hover:bg-accent"
+                      >
+                        +
+                      </button>
+                    </div>
+                  ))}
+                </div>
                 {(['X', 'Y', 'Z'] as const).map((axis) => {
                   const minKey = `min${axis}` as 'minX' | 'minY' | 'minZ';
                   const maxKey = `max${axis}` as 'maxX' | 'maxY' | 'maxZ';

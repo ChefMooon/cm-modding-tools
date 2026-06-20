@@ -9,3 +9,5 @@ export interface CollisionBox {
   maxY: number;
   maxZ: number;
 }
+
+export type MoveAxis = 'X' | 'Y' | 'Z';

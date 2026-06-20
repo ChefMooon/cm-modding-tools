@@ -1,14 +1,21 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Line } from '@react-three/drei';
-import type { CollisionBox } from '../types';
+import { useState } from 'react';
+import type { CollisionBox, MoveAxis } from '../types';
 
 interface ViewportProps {
   boxes: CollisionBox[];
   selectedBoxId: string | null;
+  moveAxis: MoveAxis;
+  moveStep: number;
   onSelectBox: (id: string) => void;
+  onMoveAxisChange: (axis: MoveAxis) => void;
+  onMoveStepChange: (step: number) => void;
+  onMoveBox: (id: string, axis: MoveAxis, delta: number) => void;
 }
 
-export function CollisionViewport({ boxes, selectedBoxId, onSelectBox }: ViewportProps) {
+export function CollisionViewport({ boxes, selectedBoxId, moveAxis, moveStep, onSelectBox, onMoveAxisChange, onMoveStepChange, onMoveBox }: ViewportProps) {
+  const [dragState, setDragState] = useState<{ boxId: string; lastX: number; lastY: number; axis: MoveAxis } | null>(null);
   const centerPixelGridLines = [];
   const startPos = -0.5;
   const step = 1.0 / 16;
@@ -23,8 +30,37 @@ export function CollisionViewport({ boxes, selectedBoxId, onSelectBox }: Viewpor
     );
   }
 
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>, boxId: string) => {
+    event.stopPropagation();
+    onSelectBox(boxId);
+    setDragState({ boxId, lastX: event.clientX, lastY: event.clientY, axis: moveAxis });
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragState) return;
+
+    const deltaX = Math.round((event.clientX - dragState.lastX) / 60);
+    const deltaY = Math.round((event.clientY - dragState.lastY) / 60);
+    const deltaUnits = dragState.axis === 'X' ? deltaX : dragState.axis === 'Y' ? deltaY : Math.round((deltaX + deltaY) / 2);
+
+    if (deltaUnits !== 0) {
+      onMoveBox(dragState.boxId, dragState.axis, deltaUnits * moveStep);
+    }
+
+    setDragState({ ...dragState, lastX: event.clientX, lastY: event.clientY });
+  };
+
+  const handlePointerUp = () => {
+    setDragState(null);
+  };
+
   return (
-    <div className="w-full h-[520px] sm:h-[560px] lg:h-[640px] xl:h-[720px] bg-muted rounded-lg overflow-hidden border border-border relative">
+    <div
+      className="w-full h-[520px] sm:h-[560px] lg:h-[640px] xl:h-[720px] bg-muted rounded-lg overflow-hidden border border-border relative"
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
+    >
       <Canvas camera={{ position: [2.2, 2.2, 3.2], fov: 45 }}>
         <ambientLight intensity={0.9} />
         <directionalLight position={[10, 15, 10]} intensity={0.4} />
@@ -73,8 +109,7 @@ export function CollisionViewport({ boxes, selectedBoxId, onSelectBox }: Viewpor
               key={box.id} 
               position={[posX, posY, posZ]}
               onPointerDown={(e) => {
-                e.stopPropagation();
-                onSelectBox(box.id);
+                handlePointerDown(e as unknown as React.PointerEvent<HTMLDivElement>, box.id);
               }}
             >
               <mesh>
@@ -95,9 +130,42 @@ export function CollisionViewport({ boxes, selectedBoxId, onSelectBox }: Viewpor
         })}
       </Canvas>
 
-      <div className="absolute top-2.5 left-2.5 flex gap-1.5 pointer-events-none select-none">
-        <span className="bg-background text-red-500 text-[10px] font-mono px-1.5 py-0.5 rounded border border-border">North (-Z)</span>
-        <span className="bg-background text-blue-500 text-[10px] font-mono px-1.5 py-0.5 rounded border border-border">West (-X)</span>
+      <div className="absolute inset-x-2.5 top-2.5 flex items-center justify-between gap-2 pointer-events-none select-none">
+        <div className="flex gap-1.5 pointer-events-none">
+          <span className="bg-background text-red-500 text-[10px] font-mono px-1.5 py-0.5 rounded border border-border">North (-Z)</span>
+          <span className="bg-background text-blue-500 text-[10px] font-mono px-1.5 py-0.5 rounded border border-border">West (-X)</span>
+        </div>
+        <div className="pointer-events-auto flex items-center gap-1 rounded border border-border bg-background/90 px-1.5 py-1 shadow-sm">
+          {(['X', 'Y', 'Z'] as const).map((axis) => (
+            <button
+              key={axis}
+              type="button"
+              onClick={() => onMoveAxisChange(axis)}
+              className={`rounded px-2 py-0.5 text-[10px] font-medium transition ${moveAxis === axis ? 'bg-foreground text-background' : 'text-foreground hover:bg-accent'}`}
+            >
+              {axis}
+            </button>
+          ))}
+          <label className="ml-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+            <span>Step</span>
+            <select
+              value={moveStep}
+              onChange={(event) => {
+                const nextStep = Number(event.target.value);
+                if (!Number.isNaN(nextStep)) {
+                  onMoveStepChange(nextStep);
+                }
+              }}
+              className="rounded border border-border bg-background px-1 py-0.5 text-[10px] text-foreground"
+            >
+              {[0.25, 0.5, 1, 2].map((step) => (
+                <option key={step} value={step}>
+                  {step}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
     </div>
   );
