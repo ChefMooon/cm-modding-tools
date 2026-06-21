@@ -465,9 +465,15 @@ function RouteComponent() {
           const currentMax = shape[`max${numericKey.slice(3)}` as NumericCoordKey] as number
           const nextMin = clampCoordValue(value)
           const delta = nextMin - currentMin
+          const nextMax = currentMax + delta
           const maxKey = `max${numericKey.slice(3)}` as NumericCoordKey
+
+          if (nextMin < COORDINATE_MIN || nextMax > COORDINATE_MAX || nextMax < COORDINATE_MIN) {
+            return shape
+          }
+
           updated[numericKey] = nextMin
-          updated[maxKey] = clampCoordValue(currentMax + delta)
+          updated[maxKey] = nextMax
         } else if (typeof value === 'number' && ['maxX', 'maxY', 'maxZ'].includes(key)) {
           const numericKey = key as 'maxX' | 'maxY' | 'maxZ'
           const clamped = clampCoordValue(value)
@@ -597,26 +603,60 @@ function RouteComponent() {
     const roundedDelta = Number(delta.toFixed(2))
     if (roundedDelta === 0) return
 
+    const nextShapes = activeProject.shapes.map((shape: CollisionShape) => {
+      if (shape.id !== id) return shape
+
+      if (axis === 'X') {
+        const nextMin = Number((shape.minX + roundedDelta).toFixed(2))
+        const nextMax = Number((shape.maxX + roundedDelta).toFixed(2))
+
+        if (nextMin < COORDINATE_MIN || nextMax > COORDINATE_MAX) {
+          return shape
+        }
+
+        return {
+          ...shape,
+          minX: nextMin,
+          maxX: nextMax,
+        }
+      }
+
+      if (axis === 'Y') {
+        const nextMin = Number((shape.minY + roundedDelta).toFixed(2))
+        const nextMax = Number((shape.maxY + roundedDelta).toFixed(2))
+
+        if (nextMin < COORDINATE_MIN || nextMax > COORDINATE_MAX) {
+          return shape
+        }
+
+        return {
+          ...shape,
+          minY: nextMin,
+          maxY: nextMax,
+        }
+      }
+
+      const nextMin = Number((shape.minZ + roundedDelta).toFixed(2))
+      const nextMax = Number((shape.maxZ + roundedDelta).toFixed(2))
+
+      if (nextMin < COORDINATE_MIN || nextMax > COORDINATE_MAX) {
+        return shape
+      }
+
+      return {
+        ...shape,
+        minZ: nextMin,
+        maxZ: nextMax,
+      }
+    })
+
+    const didMove = nextShapes.some((shape: CollisionShape, index: number) => shape !== activeProject.shapes[index])
+    if (!didMove) return
+
     saveHistoryState(activeProject.id, activeProject.shapes)
     updateProject(activeProject.id, (project) => ({
       ...project,
-      shapes: project.shapes.map((shape: CollisionShape) => {
-        if (shape.id !== id) return shape
-
-        const updated = { ...shape }
-        if (axis === 'X') {
-          updated.minX = clampCoordValue(shape.minX + roundedDelta)
-          updated.maxX = clampCoordValue(shape.maxX + roundedDelta)
-        } else if (axis === 'Y') {
-          updated.minY = clampCoordValue(shape.minY + roundedDelta)
-          updated.maxY = clampCoordValue(shape.maxY + roundedDelta)
-        } else {
-          updated.minZ = clampCoordValue(shape.minZ + roundedDelta)
-          updated.maxZ = clampCoordValue(shape.maxZ + roundedDelta)
-        }
-
-        return updated
-      }),
+      shapes: nextShapes,
     }))
   }
 
