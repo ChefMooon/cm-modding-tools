@@ -10,6 +10,7 @@ import { ProjectManagement } from '../feature/collision-box-builder/components/P
 import { ProjectContextCard } from '../feature/collision-box-builder/components/ProjectContextCard'
 import { StorageSafetyBadge } from '../feature/collision-box-builder/components/StorageSafetyBadge'
 import {
+  clampCollisionCoordinate,
   createDefaultState,
   createProject,
   createShape,
@@ -23,7 +24,7 @@ import {
   writeStoredState,
 } from '../feature/collision-box-builder/lib/persistence'
 import type { CollisionBox, CollisionShape, MarkerColor, MoveAxis, RotationAxisValue, VoxelProject } from '../feature/collision-box-builder/types/types'
-import { MARKER_COLORS, MAX_PROJECTS, MAX_SHAPES_PER_PROJECT, ROTATION_VALUES } from '../feature/collision-box-builder/types/types'
+import { COORDINATE_MAX, COORDINATE_MIN, MARKER_COLORS, MAX_PROJECTS, MAX_SHAPES_PER_PROJECT, ROTATION_VALUES } from '../feature/collision-box-builder/types/types'
 
 type NumericCoordKey = 'minX' | 'minY' | 'minZ' | 'maxX' | 'maxY' | 'maxZ';
 type OutputFlavor = 'standard' | 'absolute';
@@ -127,7 +128,7 @@ function RouteComponent() {
     return () => window.clearTimeout(timer)
   }, [statusMessage])
 
-  const clampCoordValue = (value: number) => Math.max(0, Math.min(16, Number(value.toFixed(2))))
+  const clampCoordValue = (value: number) => clampCollisionCoordinate(value)
   const clampPivotValue = (value: number) => Math.max(-8, Math.min(8, Number(value.toFixed(2))))
 
   const formatShapeDimensions = (shape: CollisionBox) => [shape.minX, shape.minY, shape.minZ, shape.maxX, shape.maxY, shape.maxZ].join(', ')
@@ -413,6 +414,36 @@ function RouteComponent() {
         rotationY: 0,
         rotationZ: 0,
       } : shape)),
+    }))
+  }
+
+  const getShapeSizeValue = (shape: CollisionShape, axis: 'X' | 'Y' | 'Z') => {
+    const minKey = `min${axis}` as 'minX' | 'minY' | 'minZ'
+    const maxKey = `max${axis}` as 'maxX' | 'maxY' | 'maxZ'
+    const size = (shape[maxKey] as number) - (shape[minKey] as number)
+    return clampCoordValue(Number(size.toFixed(2)))
+  }
+
+  const updateShapeSize = (id: string, axis: 'X' | 'Y' | 'Z', value: number) => {
+    if (!activeProject) return
+
+    const minKey = `min${axis}` as 'minX' | 'minY' | 'minZ'
+    const maxKey = `max${axis}` as 'maxX' | 'maxY' | 'maxZ'
+    const nextSize = clampCoordValue(value)
+
+    saveHistoryState(activeProject.id, activeProject.shapes)
+    updateProject(activeProject.id, (project) => ({
+      ...project,
+      shapes: project.shapes.map((shape: CollisionShape) => {
+        if (shape.id !== id) {
+          return shape
+        }
+
+        const updated = { ...shape }
+        const currentMin = shape[minKey] as number
+        updated[maxKey] = clampCoordValue(currentMin + nextSize)
+        return updated
+      }),
     }))
   }
 
@@ -1068,8 +1099,8 @@ function RouteComponent() {
                           key={field.key}
                           label={field.label}
                           value={selectedShape[field.key as keyof CollisionShape] as number}
-                          min={0}
-                          max={16}
+                          min={COORDINATE_MIN}
+                          max={COORDINATE_MAX}
                           step={globalStepSize}
                           onChange={(value) => updateShapeField(selectedShape.id, field.key as keyof CollisionShape, value)}
                         />
@@ -1085,16 +1116,16 @@ function RouteComponent() {
                   <div className="grid gap-2 sm:grid-cols-3">
                     {(['X', 'Y', 'Z'] as const).map((axis) => {
                       const key = `size${axis}` as 'sizeX' | 'sizeY' | 'sizeZ'
-                      const value = selectedShape[axis === 'X' ? 'maxX' : axis === 'Y' ? 'maxY' : 'maxZ'] as number
+                      const value = getShapeSizeValue(selectedShape, axis)
                       return (
                         <DraggableStepper
                           key={key}
                           label={axis}
                           value={value}
                           min={0}
-                          max={16}
+                          max={COORDINATE_MAX - COORDINATE_MIN}
                           step={globalStepSize}
-                          onChange={(nextValue) => updateShapeAttribute(selectedShape.id, axis === 'X' ? 'maxX' : axis === 'Y' ? 'maxY' : 'maxZ', nextValue)}
+                          onChange={(nextValue) => updateShapeSize(selectedShape.id, axis, nextValue)}
                         />
                       )
                     })}

@@ -11,6 +11,8 @@ import {
   ROTATION_VALUES,
   STORAGE_KEY,
   STORAGE_VERSION,
+  COORDINATE_MAX,
+  COORDINATE_MIN,
 } from '../types/types'
 
 export interface CollisionBuilderBackupPayload {
@@ -36,6 +38,10 @@ function resolveMarkerColorState(overrides: Partial<CollisionShape> = {}) {
   return { markerColor, markerColorSource }
 }
 
+export function clampCollisionCoordinate(value: number) {
+  return Math.min(COORDINATE_MAX, Math.max(COORDINATE_MIN, Number(value.toFixed(2))))
+}
+
 export function createShape(overrides: Partial<CollisionShape> = {}): CollisionShape {
   const { markerColor, markerColorSource } = resolveMarkerColorState(overrides)
 
@@ -45,12 +51,12 @@ export function createShape(overrides: Partial<CollisionShape> = {}): CollisionS
     visible: overrides.visible ?? true,
     markerColor,
     markerColorSource,
-    minX: overrides.minX ?? 4,
-    minY: overrides.minY ?? 2,
-    minZ: overrides.minZ ?? 4,
-    maxX: overrides.maxX ?? 12,
-    maxY: overrides.maxY ?? 10,
-    maxZ: overrides.maxZ ?? 12,
+    minX: clampCollisionCoordinate(overrides.minX ?? 4),
+    minY: clampCollisionCoordinate(overrides.minY ?? 2),
+    minZ: clampCollisionCoordinate(overrides.minZ ?? 4),
+    maxX: clampCollisionCoordinate(overrides.maxX ?? 12),
+    maxY: clampCollisionCoordinate(overrides.maxY ?? 10),
+    maxZ: clampCollisionCoordinate(overrides.maxZ ?? 12),
     pivotX: overrides.pivotX ?? 0,
     pivotY: overrides.pivotY ?? 0,
     pivotZ: overrides.pivotZ ?? 0,

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 import { ChevronDown, ChevronUp, FileJson2, Upload, XCircle } from 'lucide-react';
 import type { CollisionShape } from '../types/types';
-import { createShape, parseBackupPayload } from '../lib/persistence';
+import { clampCollisionCoordinate, createShape, parseBackupPayload } from '../lib/persistence';
 
 type ImportTarget = 'current-project' | 'new-projects';
 type BoxShapeMode = 'detailed' | 'simplified';
@@ -171,7 +171,7 @@ interface ParsedImportFile {
   backupProjects?: Array<{ name: string; shapes: CollisionShape[]; createdAt?: number; lastModified?: number; exportedAt?: string }>;
 }
 
-const clampCoord = (value: number) => Math.max(0, Math.min(16, Number(value.toFixed(2))));
+const clampCoord = (value: number) => clampCollisionCoordinate(value);
 
 const normalizeBounds = (fromValue: number, toValue: number) => {
   const min = clampCoord(Math.min(fromValue, toValue));
