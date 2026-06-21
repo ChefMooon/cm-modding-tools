@@ -11,7 +11,7 @@ import {
   ROTATION_VALUES,
   STORAGE_KEY,
   STORAGE_VERSION,
-} from '../types'
+} from '../types/types'
 
 export interface CollisionBuilderBackupPayload {
   format: 'cm-modding-tools-collision-builder-backup'

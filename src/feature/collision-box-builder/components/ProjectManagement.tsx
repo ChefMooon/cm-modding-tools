@@ -1,6 +1,6 @@
 import { Download, Info, Plus, Trash2, X } from 'lucide-react'
-import type { VoxelProject } from '../types'
-import { MAX_PROJECTS, MAX_SHAPES_PER_PROJECT } from '../types'
+import type { VoxelProject } from '../types/types'
+import { MAX_PROJECTS, MAX_SHAPES_PER_PROJECT } from '../types/types'
 
 interface ProjectManagementProps {
   isOpen: boolean

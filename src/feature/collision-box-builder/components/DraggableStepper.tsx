@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
-import { getEffectiveStepValue, type StepModifierEvent } from './stepUtils'
+import { getEffectiveStepValue, type StepModifierEvent } from '../lib/stepUtils'
 
 interface DraggableStepperProps {
   label: string

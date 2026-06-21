@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 import { ChevronDown, ChevronUp, FileJson2, Upload, XCircle } from 'lucide-react';
-import type { CollisionShape } from '../types';
-import { createShape, parseBackupPayload } from './persistence';
+import type { CollisionShape } from '../types/types';
+import { createShape, parseBackupPayload } from '../lib/persistence';
 
 type ImportTarget = 'current-project' | 'new-projects';
 type BoxShapeMode = 'detailed' | 'simplified';

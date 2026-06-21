@@ -4,8 +4,8 @@ import { RotateCcw } from 'lucide-react';
 import { useRef, useState } from 'react';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Button } from '../../../components/ui/button';
-import type { CollisionBox, MoveAxis } from '../types';
-import { getEffectiveStepValue } from './stepUtils';
+import type { CollisionBox, MoveAxis } from '../types/types';
+import { getEffectiveStepValue } from '../lib/stepUtils';
 
 interface ViewportProps {
   boxes: CollisionBox[];

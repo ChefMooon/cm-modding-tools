@@ -89,7 +89,7 @@ function RootComponent() {
                 <Link to="/" className="transition-colors hover:text-foreground [&.active]:font-semibold [&.active]:text-foreground">
                   Home
                 </Link>
-                <Link to="/collision-box" className="transition-colors hover:text-foreground [&.active]:font-semibold [&.active]:text-foreground">
+                <Link to="/collision-box-builder" className="transition-colors hover:text-foreground [&.active]:font-semibold [&.active]:text-foreground">
                   Collision Box Builder
                 </Link>
               </nav>

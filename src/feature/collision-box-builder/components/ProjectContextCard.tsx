@@ -1,5 +1,5 @@
 import { FolderOpen, Plus, Settings2, Trash2 } from 'lucide-react'
-import type { VoxelProject } from '../types'
+import type { VoxelProject } from '../types/types'
 
 interface ProjectContextCardProps {
   activeProjectId: string | null

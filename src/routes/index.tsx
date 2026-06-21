@@ -40,7 +40,7 @@ function HomeComponent() {
             <CardContent>
               <p className="text-xs text-muted-foreground font-mono mb-4">Outputs: VoxelShape code snippets</p>
               <Button asChild variant="outline" size="sm">
-                <Link to="/collision-box">Open Tool</Link>
+                <Link to="/collision-box-builder">Open Tool</Link>
               </Button>
             </CardContent>
           </Card>

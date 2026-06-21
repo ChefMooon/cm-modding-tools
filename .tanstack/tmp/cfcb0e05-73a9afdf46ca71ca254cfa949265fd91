@@ -37,7 +37,7 @@ interface ConfirmationState {
   onConfirm: () => void
 }
 
-export const Route = createFileRoute('/collision-box')({
+export const Route = createFileRoute('')({
   component: RouteComponent,
 })
 

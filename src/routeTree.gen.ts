@@ -9,18 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as CollisionBoxBuilderRouteImport } from './routes/collision-box-builder'
 import { Route as AboutRouteImport } from './routes/about'
-import { Route as CollisionBoxRouteRouteImport } from './routes/collision-box/route'
 import { Route as IndexRouteImport } from './routes/index'
 
+const CollisionBoxBuilderRoute = CollisionBoxBuilderRouteImport.update({
+  id: '/collision-box-builder',
+  path: '/collision-box-builder',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CollisionBoxRouteRoute = CollisionBoxRouteRouteImport.update({
-  id: '/collision-box',
-  path: '/collision-box',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,48 +31,48 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/collision-box': typeof CollisionBoxRouteRoute
   '/about': typeof AboutRoute
+  '/collision-box-builder': typeof CollisionBoxBuilderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/collision-box': typeof CollisionBoxRouteRoute
   '/about': typeof AboutRoute
+  '/collision-box-builder': typeof CollisionBoxBuilderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/collision-box': typeof CollisionBoxRouteRoute
   '/about': typeof AboutRoute
+  '/collision-box-builder': typeof CollisionBoxBuilderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/collision-box' | '/about'
+  fullPaths: '/' | '/about' | '/collision-box-builder'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/collision-box' | '/about'
-  id: '__root__' | '/' | '/collision-box' | '/about'
+  to: '/' | '/about' | '/collision-box-builder'
+  id: '__root__' | '/' | '/about' | '/collision-box-builder'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CollisionBoxRouteRoute: typeof CollisionBoxRouteRoute
   AboutRoute: typeof AboutRoute
+  CollisionBoxBuilderRoute: typeof CollisionBoxBuilderRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/collision-box-builder': {
+      id: '/collision-box-builder'
+      path: '/collision-box-builder'
+      fullPath: '/collision-box-builder'
+      preLoaderRoute: typeof CollisionBoxBuilderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/collision-box': {
-      id: '/collision-box'
-      path: '/collision-box'
-      fullPath: '/collision-box'
-      preLoaderRoute: typeof CollisionBoxRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -87,8 +87,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CollisionBoxRouteRoute: CollisionBoxRouteRoute,
   AboutRoute: AboutRoute,
+  CollisionBoxBuilderRoute: CollisionBoxBuilderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
