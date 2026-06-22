@@ -11,7 +11,7 @@ export function DragDropImportOverlay() {
         <p className="mt-2 max-w-md text-sm text-muted-foreground">Supports individual Voxel Shape JSON files or complete project backup folders.</p>
         <div className="mt-6 flex items-center gap-2 rounded-full border border-border/70 bg-background/60 px-3 py-1.5 text-xs text-muted-foreground">
           <FolderOpen className="h-3.5 w-3.5" />
-          <span>Import will open the existing import dialog automatically.</span>
+          <span>The import dialog will open automatically.</span>
         </div>
       </div>
     </div>
