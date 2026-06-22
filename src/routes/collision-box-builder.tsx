@@ -12,6 +12,7 @@ import { ShapePropertiesPanel } from '../feature/collision-box-builder/component
 import { ShapesListSidebar } from '../feature/collision-box-builder/components/ShapesListSidebar'
 import { StorageSafetyBadge } from '../feature/collision-box-builder/components/StorageSafetyBadge'
 import { useCollisionBuilderState } from '../feature/collision-box-builder/hook/useCollisionBuilderState'
+import type { PreviewDirection } from '../feature/collision-box-builder/components/ViewportToolbar'
 import { collectFilesFromItems } from '../feature/collision-box-builder/lib/importFileUtils'
 import { getEffectiveStepValue } from '../feature/collision-box-builder/lib/stepUtils'
 import type { MoveAxis } from '../feature/collision-box-builder/types/types'
@@ -38,6 +39,8 @@ function RouteComponent() {
   const [showPivotPoint, setShowPivotPoint] = useState(false)
   const [moveAxis, setMoveAxis] = useState<MoveAxis>('X')
   const [globalStepSize, setGlobalStepSize] = useState<number>(1)
+  const [activePreviewDirection, setActivePreviewDirection] = useState<PreviewDirection>('NORTH')
+  const [isViewportToolbarOpen, setIsViewportToolbarOpen] = useState(true)
   const [confirmationState, setConfirmationState] = useState<ConfirmationState | null>(null)
   const [isDraggingActive, setIsDraggingActive] = useState(false)
   const [queuedImportFiles, setQueuedImportFiles] = useState<File[]>([])
@@ -447,10 +450,14 @@ function RouteComponent() {
                 moveAxis={moveAxis}
                 moveStep={globalStepSize}
                 showPivotPoint={showPivotPoint}
+                activePreviewDirection={activePreviewDirection}
+                isViewportToolbarOpen={isViewportToolbarOpen}
                 onSelectBox={setSelectedShapeId}
                 onMoveAxisChange={setMoveAxis}
                 onMoveStepChange={setGlobalStepSize}
                 onMoveBox={moveShapeByDelta}
+                onPreviewDirectionChange={setActivePreviewDirection}
+                onViewportToolbarToggle={() => setIsViewportToolbarOpen((value) => !value)}
               />
             </div>
 

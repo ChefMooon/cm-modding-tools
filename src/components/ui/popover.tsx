@@ -18,6 +18,12 @@ function usePopoverContext() {
   return context
 }
 
+interface PopoverContentProps extends PropsWithChildren<ComponentPropsWithoutRef<'div'>> {
+  side?: 'top' | 'right' | 'bottom' | 'left'
+  align?: 'start' | 'center' | 'end'
+  sideOffset?: number
+}
+
 export function Popover({ children, open, onOpenChange }: PropsWithChildren<{ open?: boolean; onOpenChange?: (open: boolean) => void }>) {
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = open !== undefined
@@ -40,8 +46,13 @@ export function Popover({ children, open, onOpenChange }: PropsWithChildren<{ op
   )
 }
 
-export function PopoverTrigger({ children, asChild = false, ...props }: PropsWithChildren<{ asChild?: boolean } & ComponentPropsWithoutRef<'button'>>) {
+export function PopoverTrigger({ children, asChild = false, onClick, ...props }: PropsWithChildren<{ asChild?: boolean; onClick?: (event: ReactMouseEvent<HTMLButtonElement>) => void } & ComponentPropsWithoutRef<'button'>>) {
   const { open, setOpen } = usePopoverContext()
+
+  const handleClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    onClick?.(event)
+    setOpen(!open)
+  }
 
   if (asChild && Children.count(children) === 1 && Children.only(children) && typeof Children.only(children) !== 'string') {
     const child = Children.only(children) as ReactElement<{ onClick?: (event: ReactMouseEvent<HTMLButtonElement>) => void }>
@@ -50,19 +61,19 @@ export function PopoverTrigger({ children, asChild = false, ...props }: PropsWit
       ...props,
       onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
         child.props.onClick?.(event)
-        setOpen(!open)
+        handleClick(event)
       },
     })
   }
 
   return (
-    <button type="button" onClick={() => setOpen(!open)} {...props}>
+    <button type="button" onClick={handleClick} {...props}>
       {children}
     </button>
   )
 }
 
-export function PopoverContent({ children, className, ...props }: PropsWithChildren<ComponentPropsWithoutRef<'div'>>) {
+export function PopoverContent({ children, className, side = 'bottom', align = 'center', sideOffset = 0, ...props }: PopoverContentProps) {
   const { open, setOpen } = usePopoverContext()
   const contentRef = useRef<HTMLDivElement | null>(null)
 
@@ -88,8 +99,28 @@ export function PopoverContent({ children, className, ...props }: PropsWithChild
     return null
   }
 
+  const positionClasses = {
+    top: 'bottom-full left-0 mb-2',
+    right: 'left-full top-0 ml-2',
+    bottom: 'top-full left-0 mt-2',
+    left: 'right-full top-0 mr-2',
+  }
+
+  const alignClasses = {
+    start: 'top-0',
+    center: 'top-1/2 -translate-y-1/2',
+    end: 'bottom-0',
+  }
+
+  const offsetStyle = sideOffset ? { [side === 'left' || side === 'right' ? 'margin' : 'marginTop']: `${sideOffset}px` } : undefined
+
   return (
-    <div ref={contentRef} className={cn('absolute right-0 top-full z-50 mt-2 pointer-events-auto', className)} {...props}>
+    <div
+      ref={contentRef}
+      className={cn('pointer-events-auto absolute z-50', positionClasses[side], alignClasses[align], className)}
+      style={offsetStyle}
+      {...props}
+    >
       {children}
     </div>
   )
