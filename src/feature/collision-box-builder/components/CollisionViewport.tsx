@@ -1,11 +1,10 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Line } from '@react-three/drei';
-import { RotateCcw } from 'lucide-react';
-import { useRef, useState } from 'react';
-import { cn } from '../../../lib/utils';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Vector3 } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { ViewportToolbar, type PreviewDirection } from './ViewportToolbar';
-import { Button } from '../../../components/ui/button';
+import { ViewportGizmoOverlay, ViewportGizmoScene, type ViewPreset } from './ViewportGizmo';
 import type { CollisionBox, MoveAxis } from '../types/types';
 import { getEffectiveStepValue } from '../lib/stepUtils';
 
@@ -36,7 +35,27 @@ const markerColorMap = {
   Lime: '#a3e635',
   Pink: '#f472b6',
   Silver: '#cbd5e1',
-}
+};
+
+const menuOptions: Array<{ label: string; preset: ViewPreset }> = [
+  { label: 'Initial View', preset: 'default' },
+  { label: 'Top View (+Y)', preset: 'top' },
+  { label: 'Bottom View (-Y)', preset: 'bottom' },
+  { label: 'Front View (+Z)', preset: 'front' },
+  { label: 'Back View (-Z)', preset: 'back' },
+  { label: 'Right View (+X)', preset: 'right' },
+  { label: 'Left View (-X)', preset: 'left' },
+];
+
+const presetViewMap: Record<ViewPreset, { position: [number, number, number]; target: [number, number, number]; previewDirection: PreviewDirection }> = {
+  default: { position: [2.2, 2.2, 3.2], target: [0, 0, 0], previewDirection: 'NORTH' },
+  top: { position: [0, 4.2, 0.01], target: [0, 0, 0], previewDirection: 'NORTH' },
+  bottom: { position: [0, -4.2, 0.01], target: [0, 0, 0], previewDirection: 'NORTH' },
+  front: { position: [0, 0, 4.2], target: [0, 0, 0], previewDirection: 'NORTH' },
+  back: { position: [0, 0, -4.2], target: [0, 0, 0], previewDirection: 'SOUTH' },
+  right: { position: [4.2, 0, 0], target: [0, 0, 0], previewDirection: 'EAST' },
+  left: { position: [-4.2, 0, 0], target: [0, 0, 0], previewDirection: 'WEST' },
+};
 
 export function CollisionViewport({
   boxes,
@@ -54,7 +73,11 @@ export function CollisionViewport({
   onViewportToolbarToggle,
 }: ViewportProps) {
   const [dragState, setDragState] = useState<{ boxId: string; lastX: number; lastY: number; axis: MoveAxis } | null>(null);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [adjustedContextMenuPosition, setAdjustedContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const centerPixelGridLines = [];
   const startPos = -0.5;
   const step = 1.0 / 16;
@@ -94,18 +117,93 @@ export function CollisionViewport({
     setDragState(null);
   };
 
-  const handleResetView = () => {
+  useEffect(() => () => {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!adjustedContextMenuPosition) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (contextMenuRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      setContextMenuPosition(null);
+      setAdjustedContextMenuPosition(null);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setContextMenuPosition(null);
+        setAdjustedContextMenuPosition(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown, true);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown, true);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [adjustedContextMenuPosition]);
+
+  useLayoutEffect(() => {
+    if (!contextMenuPosition) {
+      setAdjustedContextMenuPosition(null);
+      return;
+    }
+
+    const menuWidth = contextMenuRef.current?.offsetWidth ?? 176;
+    const menuHeight = contextMenuRef.current?.offsetHeight ?? 220;
+    const padding = 12;
+    const maxX = Math.max(padding, window.innerWidth - menuWidth - padding);
+    const maxY = Math.max(padding, window.innerHeight - menuHeight - padding);
+
+    setAdjustedContextMenuPosition({
+      x: Math.min(Math.max(contextMenuPosition.x, padding), maxX),
+      y: Math.min(Math.max(contextMenuPosition.y, padding), maxY),
+    });
+  }, [contextMenuPosition]);
+
+  const animateCameraToPreset = (preset: ViewPreset) => {
     const controls = controlsRef.current;
     if (!controls) return;
 
-    controls.target.set(0, 0, 0);
-    controls.object.position.set(2.2, 2.2, 3.2);
-    controls.object.lookAt(0, 0, 0);
-    controls.update();
+    const presetData = presetViewMap[preset];
+    const startPosition = controls.object.position.clone();
+    const startTarget = controls.target.clone();
+    const endPosition = new Vector3(...presetData.position);
+    const endTarget = new Vector3(...presetData.target);
+    const duration = 220;
+    const startTime = performance.now();
 
-    if (typeof controls.reset === 'function') {
-      controls.reset();
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
     }
+
+    const tick = (time: number) => {
+      const progress = Math.min(1, (time - startTime) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      controls.object.position.lerpVectors(startPosition, endPosition, eased);
+      controls.target.lerpVectors(startTarget, endTarget, eased);
+      controls.update();
+
+      if (progress < 1) {
+        animationFrameRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    animationFrameRef.current = requestAnimationFrame(tick);
+  };
+
+  const handleViewChange = (preset: ViewPreset) => {
+    setContextMenuPosition(null);
+    animateCameraToPreset(preset);
   };
 
   const getPreviewBounds = (box: CollisionBox) => {
@@ -142,6 +240,22 @@ export function CollisionViewport({
     }
   };
 
+  const previewDirectionLabel = activePreviewDirection === 'NORTH'
+    ? 'North'
+    : activePreviewDirection === 'SOUTH'
+      ? 'South'
+      : activePreviewDirection === 'EAST'
+        ? 'East'
+        : 'West';
+
+  const previewDirectionMatrix = activePreviewDirection === 'NORTH'
+    ? '0°'
+    : activePreviewDirection === 'SOUTH'
+      ? '180°'
+      : activePreviewDirection === 'EAST'
+        ? '270°'
+        : '90°';
+
   return (
     <div
       className="relative h-[320px] w-full overflow-visible rounded-lg border border-border bg-muted sm:h-[380px] md:h-[460px] lg:h-[560px] xl:h-[640px]"
@@ -154,6 +268,7 @@ export function CollisionViewport({
         <directionalLight position={[10, 15, 10]} intensity={0.4} />
 
         <OrbitControls ref={controlsRef} makeDefault enableDamping dampingFactor={0.05} />
+        <ViewportGizmoScene />
 
         {/* 3x3 Outer Borders */}
         {[-1.5, -0.5, 0.5, 1.5].map((coord, i) => (
@@ -249,17 +364,36 @@ export function CollisionViewport({
       />
 
       <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 flex items-center gap-2 rounded-lg border border-border bg-background/60 px-3 py-1.5 text-xs font-mono shadow-sm backdrop-blur-md select-none">
-        <span className={cn(activePreviewDirection === 'NORTH' ? 'text-foreground' : 'text-amber-500')}>Facing: {activePreviewDirection}</span>
+        <span className={activePreviewDirection === 'NORTH' ? 'text-foreground' : 'text-amber-500'}>Facing: {previewDirectionLabel}</span>
         <span className="text-muted-foreground">|</span>
-        <span className={cn(activePreviewDirection === 'NORTH' ? 'text-muted-foreground' : 'text-amber-500')}>
-          Matrix: {activePreviewDirection} ({activePreviewDirection === 'NORTH' ? '0°' : activePreviewDirection === 'SOUTH' ? '180°' : activePreviewDirection === 'EAST' ? '270°' : '90°'})
+        <span className={activePreviewDirection === 'NORTH' ? 'text-muted-foreground' : 'text-amber-500'}>
+          Matrix: {previewDirectionLabel} ({previewDirectionMatrix})
         </span>
       </div>
 
-      <div className="pointer-events-none absolute bottom-12 left-2.5 z-10 flex flex-wrap gap-1.5 select-none">
-        <span className="rounded border border-border bg-background/95 px-1.5 py-0.5 font-mono text-[10px] text-red-500 shadow-sm">North (-Z)</span>
-        <span className="rounded border border-border bg-background/95 px-1.5 py-0.5 font-mono text-[10px] text-blue-500 shadow-sm">West (-X)</span>
-      </div>
+      <ViewportGizmoOverlay onViewChange={handleViewChange} onContextMenuRequest={(x, y) => setContextMenuPosition({ x, y })} />
+
+      {adjustedContextMenuPosition ? (
+        <div
+          ref={contextMenuRef}
+          className="pointer-events-auto fixed z-20 min-w-[11rem] rounded-xl border border-border bg-background/95 p-1.5 shadow-xl backdrop-blur-md"
+          style={{ left: adjustedContextMenuPosition.x, top: adjustedContextMenuPosition.y }}
+        >
+          <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            View presets
+          </div>
+          {menuOptions.map((option) => (
+            <button
+              key={option.preset}
+              type="button"
+              className="flex w-full items-center rounded-lg px-2 py-1.5 text-left text-sm text-foreground transition hover:bg-accent"
+              onClick={() => handleViewChange(option.preset)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="pointer-events-auto absolute right-2.5 top-2.5 z-10 flex flex-wrap items-center justify-end gap-1 rounded border border-border bg-background/95 px-1.5 py-1 shadow-sm">
         {(['X', 'Y', 'Z'] as const).map((axis) => (
@@ -293,18 +427,6 @@ export function CollisionViewport({
         </label>
       </div>
 
-      <div className="pointer-events-auto absolute bottom-2.5 right-2.5 z-10">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={handleResetView}
-          className="h-8 w-8 rounded-full border border-border/70 bg-background/85 shadow-sm backdrop-blur-sm hover:bg-background"
-          aria-label="Reset camera view"
-        >
-          <RotateCcw size={14} />
-        </Button>
-      </div>
     </div>
   );
 }
