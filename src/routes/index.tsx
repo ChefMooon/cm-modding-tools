@@ -15,7 +15,7 @@ function HomeComponent() {
           ChefMooon's Modding Tools
         </h1>
         <p className="text-muted-foreground text-lg max-w-2xl leading-relaxed">
-          A collection of web-based tools designed for Minecraft Java Edition mod development. Less manual math, more building.
+          A collection of web-based tools designed for Minecraft Java Edition mod development.
         </p>
       </div>
 
