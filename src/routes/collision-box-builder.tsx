@@ -1,10 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react'
 import { ChevronDown, ChevronUp, Copy, Eye, EyeOff, FileJson2, Plus, Redo2, Trash2, Undo2 } from 'lucide-react'
 import { ConfirmationDialog } from '../components/ui/confirmation-dialog'
 import { DraggableStepper } from '../feature/collision-box-builder/components/DraggableStepper'
 import { CollisionViewport } from '../feature/collision-box-builder/components/CollisionViewport'
 import { JSONImport, type ImportPayload } from '../feature/collision-box-builder/components/JSONImport'
+import { DragDropImportOverlay } from '../feature/collision-box-builder/components/DragDropImportOverlay'
+import { collectFilesFromItems } from '../feature/collision-box-builder/lib/importFileUtils'
 import { getEffectiveStepValue } from '../feature/collision-box-builder/lib/stepUtils'
 import { ProjectManagement } from '../feature/collision-box-builder/components/ProjectManagement'
 import { ProjectContextCard } from '../feature/collision-box-builder/components/ProjectContextCard'
@@ -75,6 +77,9 @@ function RouteComponent() {
   const [confirmationState, setConfirmationState] = useState<ConfirmationState | null>(null)
   const [historyMap, setHistoryMap] = useState<Record<string, CollisionShape[][]>>({})
   const [redoMap, setRedoMap] = useState<Record<string, CollisionShape[][]>>({})
+  const [isDraggingActive, setIsDraggingActive] = useState(false)
+  const [queuedImportFiles, setQueuedImportFiles] = useState<File[]>([])
+  const dragCounterRef = useRef(0)
 
   const requestedProjectId = typeof window === 'undefined'
     ? null
@@ -127,6 +132,20 @@ function RouteComponent() {
     const timer = window.setTimeout(() => setStatusMessage(null), 4000)
     return () => window.clearTimeout(timer)
   }, [statusMessage])
+
+  useEffect(() => {
+    const resetDragState = () => {
+      dragCounterRef.current = 0
+      setIsDraggingActive(false)
+    }
+
+    window.addEventListener('dragend', resetDragState)
+    window.addEventListener('drop', resetDragState)
+    return () => {
+      window.removeEventListener('dragend', resetDragState)
+      window.removeEventListener('drop', resetDragState)
+    }
+  }, [])
 
   const clampCoordValue = (value: number) => clampCollisionCoordinate(value)
   const clampPivotValue = (value: number) => Math.max(-8, Math.min(8, Number(value.toFixed(2))))
@@ -725,6 +744,53 @@ function RouteComponent() {
     setConfirmationState(nextState)
   }
 
+  const handleDragEnter = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const types = Array.from(event.dataTransfer?.types ?? [])
+    if (!types.includes('Files')) {
+      return
+    }
+
+    dragCounterRef.current += 1
+    setIsDraggingActive(true)
+  }
+
+  const handleDragLeave = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1)
+    if (dragCounterRef.current === 0) {
+      setIsDraggingActive(false)
+    }
+  }
+
+  const handleDragOver = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy'
+    }
+  }
+
+  const handleDrop = async (event: DragEvent<HTMLElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    dragCounterRef.current = 0
+    setIsDraggingActive(false)
+
+    const files = await collectFilesFromItems(event.dataTransfer?.items ?? null)
+    if (files.length === 0) {
+      return
+    }
+
+    setQueuedImportFiles(files)
+    setShowImportModal(true)
+  }
+
   const closeConfirmation = () => {
     setConfirmationState(null)
   }
@@ -850,6 +916,13 @@ function RouteComponent() {
         return
       }
 
+      if (isDraggingActive && event.key === 'Escape') {
+        event.preventDefault()
+        dragCounterRef.current = 0
+        setIsDraggingActive(false)
+        return
+      }
+
       if (event.key === 'Escape') {
         event.preventDefault()
         setSelectedShapeId('')
@@ -878,10 +951,19 @@ function RouteComponent() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeProject, addNewShape, copiedShape, duplicateSelectedShape, handleRedo, handleUndo, moveAxis, moveShapeByDelta, nudgeSelectedShape, removeShape, resetSelectedShape, selectedShape, selectedShapeId, shapes, toggleVisibility])
+  }, [activeProject, addNewShape, copiedShape, duplicateSelectedShape, handleRedo, handleUndo, isDraggingActive, moveAxis, moveShapeByDelta, nudgeSelectedShape, removeShape, resetSelectedShape, selectedShape, selectedShapeId, shapes, toggleVisibility])
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-screen-2xl space-y-4 text-foreground app-shell">
+    <div
+      className="relative mx-auto min-h-screen w-full max-w-screen-2xl text-foreground app-shell"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {isDraggingActive ? <DragDropImportOverlay /> : null}
+
+      <div className="space-y-4">
       <div className="space-y-2 border-b border-border pb-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
@@ -893,7 +975,7 @@ function RouteComponent() {
             <button type="button" onClick={() => setShowShortcutsHelp((value) => !value)} className="rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent">
               {showShortcutsHelp ? 'Hide Shortcuts' : 'Shortcuts'}
             </button>
-            <button type="button" onClick={() => setShowImportModal(true)} className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent">
+            <button type="button" onClick={() => { setQueuedImportFiles([]); setShowImportModal(true) }} className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent">
               <FileJson2 size={13} /> Import
             </button>
             <button disabled={history.length === 0} onClick={handleUndo} className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30 cursor-pointer">
@@ -933,7 +1015,7 @@ function RouteComponent() {
         ) : null}
       </div>
 
-      {showImportModal ? <JSONImport isOpen={showImportModal} onClose={() => setShowImportModal(false)} onImport={handleImport} existingProjects={storageState.projects.map((project) => ({ id: project.id, name: project.name, createdAt: project.createdAt, lastModified: project.lastModified }))} /> : null}
+      {showImportModal ? <JSONImport isOpen={showImportModal} onClose={() => { setShowImportModal(false); setQueuedImportFiles([]) }} onImport={handleImport} existingProjects={storageState.projects.map((project) => ({ id: project.id, name: project.name, createdAt: project.createdAt, lastModified: project.lastModified }))} importFiles={queuedImportFiles.length > 0 ? queuedImportFiles : null} /> : null}
       {showProjectManagementModal ? (
         <ProjectManagement
           isOpen={showProjectManagementModal}
@@ -1225,6 +1307,7 @@ function RouteComponent() {
             <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">Select or add a shape.</div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )

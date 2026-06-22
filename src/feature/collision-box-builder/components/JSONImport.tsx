@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 import { ChevronDown, ChevronUp, FileJson2, Upload, XCircle } from 'lucide-react';
 import type { CollisionShape } from '../types/types';
 import { clampCollisionCoordinate, createShape, parseBackupPayload } from '../lib/persistence';
+import { collectFilesFromItems, collectFilesFromSelection } from '../lib/importFileUtils';
 
 type ImportTarget = 'current-project' | 'new-projects';
 type BoxShapeMode = 'detailed' | 'simplified';
@@ -75,74 +76,12 @@ const parseBackupFile = async (file: File) => {
   }));
 };
 
-const readDirectoryEntries = async (reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> => {
-  const batch = await new Promise<FileSystemEntry[]>((resolve, reject) => {
-    reader.readEntries(resolve, reject);
-  });
-
-  if (batch.length === 0) {
-    return [];
-  }
-
-  const remainingEntries = await readDirectoryEntries(reader);
-  return [...batch, ...remainingEntries];
-};
-
-const collectFilesFromEntry = async (entry: FileSystemEntry | null | undefined): Promise<File[]> => {
-  if (!entry) {
-    return [];
-  }
-
-  if (entry.isFile) {
-    const fileEntry = entry as FileSystemFileEntry;
-    return new Promise<File[]>((resolve, reject) => {
-      fileEntry.file((file) => resolve([file]), reject);
-    });
-  }
-
-  if (entry.isDirectory) {
-    const directoryEntry = entry as FileSystemDirectoryEntry;
-    const entries = await readDirectoryEntries(directoryEntry.createReader());
-    const nestedFiles = await Promise.all(entries.map((childEntry) => collectFilesFromEntry(childEntry)));
-    return nestedFiles.flat();
-  }
-
-  return [];
-};
-
-const collectFilesFromItems = async (items: DataTransferItemList | null | undefined): Promise<File[]> => {
-  if (!items) {
-    return [];
-  }
-
-  const fileEntries = await Promise.all(Array.from(items, async (item) => {
-    if (item.kind !== 'file') {
-      return null;
-    }
-
-    if (typeof item.webkitGetAsEntry === 'function') {
-      return collectFilesFromEntry(item.webkitGetAsEntry());
-    }
-
-    return item.getAsFile() ? [item.getAsFile() as File] : [];
-  }));
-
-  return fileEntries.flat().filter((file): file is File => Boolean(file));
-};
-
-const collectFilesFromSelection = async (files: FileList | null | undefined): Promise<File[]> => {
-  if (!files) {
-    return [];
-  }
-
-  return Array.from(files).filter((file): file is File => Boolean(file));
-};
-
 interface JSONImportProps {
   isOpen: boolean;
   onClose: () => void;
   onImport: (payload: ImportPayload) => void;
   existingProjects?: Array<{ id: string; name: string; createdAt?: number; lastModified?: number }>;
+  importFiles?: File[] | null;
 }
 
 interface ParsedElement {
@@ -219,7 +158,7 @@ const getParsedFileBoxCount = (parsedFile: ParsedImportFile) => {
   return parsedFile.parsedBoxes.length;
 };
 
-export function JSONImport({ isOpen, onClose, onImport, existingProjects = [] }: JSONImportProps) {
+export function JSONImport({ isOpen, onClose, onImport, existingProjects = [], importFiles = null }: JSONImportProps) {
   const [dragActive, setDragActive] = useState(false);
   const [fileNames, setFileNames] = useState<string[]>([]);
   const [error, setError] = useState('');
@@ -229,6 +168,7 @@ export function JSONImport({ isOpen, onClose, onImport, existingProjects = [] }:
   const [globalShapeMode, setGlobalShapeMode] = useState<BoxShapeMode>('detailed');
   const [skippedCount, setSkippedCount] = useState(0);
   const [showWarnings, setShowWarnings] = useState(true);
+  const processedImportSignatureRef = useRef<string | null>(null);
 
   const parseModel = async (file: File) => {
     const content = await file.text();
@@ -326,7 +266,7 @@ export function JSONImport({ isOpen, onClose, onImport, existingProjects = [] }:
     return file.shapeMode === 'inherit' ? globalShapeMode : file.shapeMode;
   };
 
-  const handleFiles = async (files: File[]) => {
+  const handleFiles = useCallback(async (files: File[]) => {
     if (files.length === 0) return;
 
     const supportedFiles = files.filter(isSupportedImportFile);
@@ -431,7 +371,7 @@ export function JSONImport({ isOpen, onClose, onImport, existingProjects = [] }:
     setWarnings([...skippedFiles.map((file) => `Skipped unsupported file ${file.name}.`), ...importWarnings]);
     setParsedFiles(parsedImportFiles);
     setSkippedCount(skippedFiles.length);
-  };
+  }, [existingProjects]);
 
   const handleFileSelection = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = await collectFilesFromSelection(event.target.files);
@@ -440,6 +380,25 @@ export function JSONImport({ isOpen, onClose, onImport, existingProjects = [] }:
     await handleFiles(files);
     event.target.value = '';
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      processedImportSignatureRef.current = null;
+      return;
+    }
+
+    if (!importFiles?.length) {
+      return;
+    }
+
+    const signature = importFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`).join('|');
+    if (signature === processedImportSignatureRef.current) {
+      return;
+    }
+
+    processedImportSignatureRef.current = signature;
+    void handleFiles(importFiles);
+  }, [importFiles, isOpen]);
 
   const handleDrop = async (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
