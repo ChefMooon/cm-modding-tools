@@ -207,7 +207,7 @@ export function ViewportGizmoOverlay({ onViewChange, onContextMenuRequest }: Vie
 
   return (
     <div
-      className="pointer-events-auto absolute bottom-2 right-2 z-10 h-24 w-24 rounded-full border border-border/40 bg-background/40 shadow-md backdrop-blur-md transition-all hover:bg-background/60 cursor-pointer flex items-center justify-center select-none"
+      className="pointer-events-auto absolute bottom-2 right-2 z-10 h-16 w-16 rounded-full border border-border/40 bg-background/40 shadow-md backdrop-blur-md transition-all hover:bg-background/60 cursor-pointer flex items-center justify-center select-none sm:h-20 sm:w-20 md:h-24 md:w-24"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

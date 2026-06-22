@@ -363,13 +363,11 @@ export function CollisionViewport({
         onToggle={onViewportToolbarToggle}
       />
 
-      <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 flex items-center gap-2 rounded-lg border border-border bg-background/60 px-3 py-1.5 text-xs font-mono shadow-sm backdrop-blur-md select-none">
-        <span className={activePreviewDirection === 'NORTH' ? 'text-foreground' : 'text-amber-500'}>Facing: {previewDirectionLabel}</span>
-        <span className="text-muted-foreground">|</span>
-        <span className={activePreviewDirection === 'NORTH' ? 'text-muted-foreground' : 'text-amber-500'}>
-          Matrix: {previewDirectionLabel} ({previewDirectionMatrix})
-        </span>
-      </div>
+      {activePreviewDirection !== 'NORTH' ? (
+        <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-10 rounded-lg border border-border bg-background/60 px-3 py-1.5 text-xs font-mono shadow-sm backdrop-blur-md select-none">
+          <span className="text-amber-500">Facing: {previewDirectionLabel} ({previewDirectionMatrix})</span>
+        </div>
+      ) : null}
 
       <ViewportGizmoOverlay onViewChange={handleViewChange} onContextMenuRequest={(x, y) => setContextMenuPosition({ x, y })} />
 
