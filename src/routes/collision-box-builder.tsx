@@ -40,7 +40,7 @@ function RouteComponent() {
   const [moveAxis, setMoveAxis] = useState<MoveAxis>('X')
   const [globalStepSize, setGlobalStepSize] = useState<number>(1)
   const [activePreviewDirection, setActivePreviewDirection] = useState<PreviewDirection>('NORTH')
-  const [isViewportToolbarOpen, setIsViewportToolbarOpen] = useState(true)
+  const [isViewportToolbarOpen, setIsViewportToolbarOpen] = useState(false)
   const [confirmationState, setConfirmationState] = useState<ConfirmationState | null>(null)
   const [isDraggingActive, setIsDraggingActive] = useState(false)
   const [queuedImportFiles, setQueuedImportFiles] = useState<File[]>([])
