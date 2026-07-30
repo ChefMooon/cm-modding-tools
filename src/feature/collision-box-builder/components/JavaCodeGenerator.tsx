@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { ChevronDown, ChevronUp, Copy } from 'lucide-react'
 import type { CollisionBox, CollisionShape } from '../types/types'
 
@@ -21,13 +21,13 @@ export function JavaCodeGenerator({ shapes, copyToClipboard }: JavaCodeGenerator
   const [shapeVariableName, setShapeVariableName] = useState('SHAPE')
   const [showOutputOptions, setShowOutputOptions] = useState(false)
 
-  const getIndividualShapeCopyValue = (shape: CollisionBox) => {
+  const getIndividualShapeCopyValue = useCallback((shape: CollisionBox) => {
     const values = outputFlavor === 'absolute'
       ? [shape.minX, shape.minY, shape.minZ, shape.maxX, shape.maxY, shape.maxZ].map(formatAbsoluteDoubleValue)
       : [shape.minX, shape.minY, shape.minZ, shape.maxX, shape.maxY, shape.maxZ]
 
     return `(${values.join(', ')})`
-  }
+  }, [outputFlavor])
 
   const getIndividualShapeSnippets = useMemo(() => {
     return shapes.map((shape, index) => {

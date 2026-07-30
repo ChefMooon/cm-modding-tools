@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react'
 import { FileJson2, Redo2, Undo2 } from 'lucide-react'
 import { ConfirmationDialog } from '../components/ui/confirmation-dialog'
 import { CollisionViewport } from '../feature/collision-box-builder/components/CollisionViewport'
@@ -98,14 +98,14 @@ function RouteComponent() {
     }
   }, [])
 
-  const getEffectiveStep = (event?: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }) => {
+  const getEffectiveStep = useCallback((event?: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }) => {
     return getEffectiveStepValue(globalStepSize, event)
-  }
+  }, [globalStepSize])
 
-  const nudgeSelectedShape = (axis: MoveAxis, direction: -1 | 1, event?: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }) => {
+  const nudgeSelectedShape = useCallback((axis: MoveAxis, direction: -1 | 1, event?: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }) => {
     if (!selectedShape) return
     moveShapeByDelta(selectedShape.id, axis, direction * getEffectiveStep(event))
-  }
+  }, [getEffectiveStep, moveShapeByDelta, selectedShape])
 
   const requestClearCurrentProjectShapes = () => {
     if (!activeProject || shapes.length === 0) {

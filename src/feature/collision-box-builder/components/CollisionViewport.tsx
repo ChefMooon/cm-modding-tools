@@ -152,21 +152,32 @@ export function CollisionViewport({
   }, [adjustedContextMenuPosition]);
 
   useLayoutEffect(() => {
+    const applyPosition = (nextPosition: { x: number; y: number } | null) => {
+      setAdjustedContextMenuPosition(nextPosition);
+    };
+
     if (!contextMenuPosition) {
-      setAdjustedContextMenuPosition(null);
-      return;
+      const frameId = window.requestAnimationFrame(() => {
+        applyPosition(null);
+      });
+
+      return () => cancelAnimationFrame(frameId);
     }
 
-    const menuWidth = contextMenuRef.current?.offsetWidth ?? 176;
-    const menuHeight = contextMenuRef.current?.offsetHeight ?? 220;
-    const padding = 12;
-    const maxX = Math.max(padding, window.innerWidth - menuWidth - padding);
-    const maxY = Math.max(padding, window.innerHeight - menuHeight - padding);
+    const frameId = window.requestAnimationFrame(() => {
+      const menuWidth = contextMenuRef.current?.offsetWidth ?? 176;
+      const menuHeight = contextMenuRef.current?.offsetHeight ?? 220;
+      const padding = 12;
+      const maxX = Math.max(padding, window.innerWidth - menuWidth - padding);
+      const maxY = Math.max(padding, window.innerHeight - menuHeight - padding);
 
-    setAdjustedContextMenuPosition({
-      x: Math.min(Math.max(contextMenuPosition.x, padding), maxX),
-      y: Math.min(Math.max(contextMenuPosition.y, padding), maxY),
+      applyPosition({
+        x: Math.min(Math.max(contextMenuPosition.x, padding), maxX),
+        y: Math.min(Math.max(contextMenuPosition.y, padding), maxY),
+      });
     });
+
+    return () => cancelAnimationFrame(frameId);
   }, [contextMenuPosition]);
 
   const animateCameraToPreset = (preset: ViewPreset) => {

@@ -398,7 +398,7 @@ export function JSONImport({ isOpen, onClose, onImport, existingProjects = [], i
 
     processedImportSignatureRef.current = signature;
     void handleFiles(importFiles);
-  }, [importFiles, isOpen]);
+  }, [handleFiles, importFiles, isOpen]);
 
   const handleDrop = async (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
