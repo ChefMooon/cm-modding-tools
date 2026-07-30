@@ -39,7 +39,7 @@ export function ShapePropertiesPanel({
 
   return (
     <div className="space-y-3 rounded-xl border border-border bg-card p-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-end justify-between gap-2">
         <div className="flex-1">
           <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Shape Name</label>
           <input
