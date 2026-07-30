@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Download, Info, Plus, Trash2, X } from 'lucide-react'
 import type { VoxelProject } from '../types/types'
 import { MAX_PROJECTS, MAX_SHAPES_PER_PROJECT } from '../types/types'
@@ -30,6 +31,29 @@ export function ProjectManagement({
   onRenameProject,
   onExportBackup,
 }: ProjectManagementProps) {
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const originalBodyOverflow = document.body.style.overflow
+    const originalBodyHeight = document.body.style.height
+    const originalHtmlOverflow = document.documentElement.style.overflow
+    const originalHtmlHeight = document.documentElement.style.height
+
+    document.body.style.overflow = 'hidden'
+    document.body.style.height = '100%'
+    document.documentElement.style.overflow = 'hidden'
+    document.documentElement.style.height = '100%'
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow
+      document.body.style.height = originalBodyHeight
+      document.documentElement.style.overflow = originalHtmlOverflow
+      document.documentElement.style.height = originalHtmlHeight
+    }
+  }, [isOpen])
+
   if (!isOpen) {
     return null
   }
