@@ -21,7 +21,7 @@ export function ProjectContextCard({
   onOpenProjectManagement,
 }: ProjectContextCardProps) {
   return (
-    <div className="relative isolate w-full overflow-visible rounded-xl border border-border bg-card">
+    <div className="relative z-20 isolate w-full overflow-visible rounded-xl border border-border bg-card">
       <div className="flex w-full flex-col gap-3 p-3">
         <div className="flex items-center gap-2">
           <FolderOpen size={15} className="shrink-0 text-muted-foreground" />

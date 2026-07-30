@@ -126,7 +126,7 @@ export function ProjectSwitcherDropdown({
   }
 
   return (
-    <div ref={containerRef} className="relative min-w-0 flex-1">
+    <div ref={containerRef} className="relative z-0 min-w-0 flex-1">
       <button
         ref={triggerRef}
         type="button"
@@ -148,7 +148,7 @@ export function ProjectSwitcherDropdown({
         aria-label="Project"
         aria-hidden={!open}
         className={cn(
-          'absolute z-50 mt-1 w-full rounded-lg border border-border bg-popover p-1 text-sm shadow-lg transition-all duration-150 ease-out',
+          'absolute z-[60] mt-1 w-full rounded-lg border border-border bg-popover p-1 text-sm shadow-lg transition-all duration-150 ease-out',
           open ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0'
         )}
       >

@@ -51,7 +51,7 @@ export function ShapesListSidebar({
     <div className="space-y-2 rounded-xl border border-border bg-card p-2.5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Shapes</h2>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="relative z-0 flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={onClearShapes}

@@ -464,7 +464,7 @@ function RouteComponent() {
             <JavaCodeGenerator shapes={shapes} copyToClipboard={copyToClipboard} />
           </div>
 
-          <div className="min-w-0 space-y-2 lg:w-[320px] lg:flex-none lg:sticky lg:top-4 lg:self-start">
+          <div className="relative z-0 min-w-0 space-y-2 lg:w-[320px] lg:flex-none lg:sticky lg:top-4 lg:self-start">
             <ProjectContextCard
               activeProjectId={effectiveActiveProjectId}
               projects={storageState.projects}
