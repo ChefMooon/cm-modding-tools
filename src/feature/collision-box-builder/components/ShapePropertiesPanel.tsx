@@ -1,6 +1,7 @@
 import type { CollisionShape } from '../types/types'
-import { COORDINATE_MAX, COORDINATE_MIN, MARKER_COLORS, ROTATION_VALUES } from '../types/types'
+import { COORDINATE_MAX, COORDINATE_MIN, ROTATION_VALUES } from '../types/types'
 import { DraggableStepper } from './DraggableStepper'
+import { MarkerColorDropdown } from './MarkerColorDropdown'
 
 interface ShapePropertiesPanelProps {
   selectedShape: CollisionShape | null
@@ -60,17 +61,10 @@ export function ShapePropertiesPanel({
       <div className="space-y-2 border-t border-border pt-2">
         <div className="rounded border border-border bg-background/70 p-2">
           <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Color</label>
-          <select
+          <MarkerColorDropdown
             value={selectedShape.markerColor}
-            onChange={(event) => onUpdateAttribute(selectedShape.id, 'markerColor', event.target.value as CollisionShape['markerColor'])}
-            className="w-full rounded border border-border bg-background px-2 py-1 text-xs text-foreground"
-          >
-            {MARKER_COLORS.map((color) => (
-              <option key={color} value={color}>
-                {color}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => onUpdateAttribute(selectedShape.id, 'markerColor', value)}
+          />
         </div>
 
         <div className="rounded border border-border bg-muted/70 p-2">
