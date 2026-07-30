@@ -3,6 +3,8 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
+import { ToolboxDropdown } from '@/components/ui/toolbox-dropdown'
+
 type ThemeMode = 'light' | 'dark' | 'system'
 
 function RootComponent() {
@@ -89,9 +91,7 @@ function RootComponent() {
                 <Link to="/" className="transition-colors hover:text-foreground [&.active]:font-semibold [&.active]:text-foreground">
                   Home
                 </Link>
-                <Link to="/collision-box-builder" className="transition-colors hover:text-foreground [&.active]:font-semibold [&.active]:text-foreground">
-                  Collision Box Builder
-                </Link>
+                <ToolboxDropdown />
               </nav>
             </div>
 
