@@ -11,10 +11,10 @@ function AboutComponent() {
         About CM Modding Tools
       </h1>
       <p className="text-muted-foreground text-base leading-relaxed">
-        This website provides simple utilities to help with Minecraft Java Edition mod development.
+        CM Modding Tools is a growing collection of browser-based utilities for Minecraft Java Edition mod development.
       </p>
       <p className="text-muted-foreground text-base leading-relaxed">
-        Instead of calculating coordinates by hand or doing complex math for block setups, you can use these tools to generate clean code parameters visually right in your browser.
+        These tools were created for practical use and are shared freely with the community. Enjoy exploring them in your workflow.
       </p>
     </div>
   )
