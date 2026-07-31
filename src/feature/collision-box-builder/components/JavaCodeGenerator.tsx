@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
-import { ChevronDown, ChevronUp, Copy } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Check, ChevronDown, ChevronUp, Copy } from 'lucide-react'
 import type { CollisionBox, CollisionShape } from '../types/types'
 
 type OutputFlavor = 'standard' | 'absolute'
@@ -20,6 +20,8 @@ export function JavaCodeGenerator({ shapes, copyToClipboard }: JavaCodeGenerator
   const [outputFlavor, setOutputFlavor] = useState<OutputFlavor>('standard')
   const [shapeVariableName, setShapeVariableName] = useState('SHAPE')
   const [showOutputOptions, setShowOutputOptions] = useState(false)
+  const [copiedActionId, setCopiedActionId] = useState<string | null>(null)
+  const resetCopyTimeoutRef = useRef<number | null>(null)
 
   const getIndividualShapeCopyValue = useCallback((shape: CollisionBox) => {
     const values = outputFlavor === 'absolute'
@@ -96,6 +98,31 @@ export function JavaCodeGenerator({ shapes, copyToClipboard }: JavaCodeGenerator
       { content: ');' },
     ]
   }, [getIndividualShapeCopyValue, getIndividualShapeSnippets, shapeVariableName, shapes])
+
+  const handleCopyValue = useCallback(async (text: string, actionId: string) => {
+    try {
+      await copyToClipboard(text)
+      setCopiedActionId(actionId)
+
+      if (resetCopyTimeoutRef.current !== null) {
+        window.clearTimeout(resetCopyTimeoutRef.current)
+      }
+
+      resetCopyTimeoutRef.current = window.setTimeout(() => {
+        setCopiedActionId((current) => current === actionId ? null : current)
+      }, 1400)
+    } catch {
+      setCopiedActionId(null)
+    }
+  }, [copyToClipboard])
+
+  useEffect(() => {
+    return () => {
+      if (resetCopyTimeoutRef.current !== null) {
+        window.clearTimeout(resetCopyTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const redundancyWarnings = useMemo(() => {
     const warnings = new Set<string>()
@@ -193,11 +220,12 @@ export function JavaCodeGenerator({ shapes, copyToClipboard }: JavaCodeGenerator
           <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Code Snippet</span>
           <button
             type="button"
-            onClick={() => { void copyToClipboard(generatedJavaOutput) }}
-            className="rounded bg-foreground/10 px-2 py-1 text-[10px] font-medium text-foreground transition hover:bg-foreground/20"
-            title="Copy entire snippet"
+            onClick={() => { void handleCopyValue(generatedJavaOutput, 'all-snippet') }}
+            className={`flex min-w-[86px] items-center justify-center rounded border border-border/70 px-2 py-1 text-[10px] font-medium transition-all duration-200 active:scale-[0.97] ${copiedActionId === 'all-snippet' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-foreground/10 text-foreground hover:bg-foreground/20'}`}
+            title={copiedActionId === 'all-snippet' ? 'Copied entire snippet' : 'Copy entire snippet'}
           >
-            <Copy className="mr-1 inline h-3 w-3" /> Copy All
+            {copiedActionId === 'all-snippet' ? <Check className="mr-1 inline h-3 w-3 shrink-0" /> : <Copy className="mr-1 inline h-3 w-3 shrink-0" />}
+            <span className="whitespace-nowrap">{copiedActionId === 'all-snippet' ? 'Copied' : 'Copy All'}</span>
           </button>
         </div>
         <div className="overflow-x-auto border-t border-border bg-muted/40 p-2 font-mono text-[11px] text-amber-600 sm:text-xs">
@@ -207,11 +235,11 @@ export function JavaCodeGenerator({ shapes, copyToClipboard }: JavaCodeGenerator
               {row.copyValue !== undefined ? (
                 <button
                   type="button"
-                  onClick={() => { if (row.copyValue !== undefined) { void copyToClipboard(row.copyValue) } }}
-                  className="flex-shrink-0 rounded bg-foreground/10 px-2 py-1 text-[10px] font-medium text-foreground transition hover:bg-foreground/20"
-                  title="Copy element values"
+                  onClick={() => { if (row.copyValue !== undefined) { void handleCopyValue(row.copyValue, `shape-${index}`) } }}
+                  className={`flex-shrink-0 rounded border border-border/70 px-2 py-1 text-[10px] font-medium transition-all duration-200 active:scale-[0.97] ${copiedActionId === `shape-${index}` ? 'bg-emerald-600 text-white shadow-sm' : 'bg-foreground/10 text-foreground hover:bg-foreground/20'}`}
+                  title={copiedActionId === `shape-${index}` ? 'Copied element values' : 'Copy element values'}
                 >
-                  <Copy className="h-3 w-3" />
+                  {copiedActionId === `shape-${index}` ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                 </button>
               ) : null}
             </div>
