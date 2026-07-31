@@ -1,4 +1,5 @@
 import { Copy, Eye, EyeOff, Plus, Trash2 } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/ui/tooltip'
 import type { CollisionShape } from '../types/types'
 
 interface ShapesListSidebarProps {
@@ -81,29 +82,45 @@ export function ShapesListSidebar({
               <span className="truncate font-mono">{shape.name || 'unnamed'}</span>
             </div>
             <div className="flex items-center gap-0.5" onClick={(event) => event.stopPropagation()}>
-              <button
-                type="button"
-                onClick={() => { void onCopyShapeDimensions(shape) }}
-                className="cursor-pointer p-1 text-muted-foreground hover:text-foreground"
-                title="Copy dimensions"
-                aria-label={`Copy dimensions for ${shape.name || 'unnamed'}`}
-              >
-                <Copy size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => onToggleVisibility(shape.id)}
-                className="cursor-pointer p-1 text-muted-foreground hover:text-foreground"
-              >
-                {shape.visible ? <Eye size={13} /> : <EyeOff size={13} />}
-              </button>
-              <button
-                type="button"
-                onClick={() => onRemoveShape(shape.id)}
-                className="cursor-pointer p-1 text-muted-foreground hover:text-red-500"
-              >
-                <Trash2 size={13} />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => { void onCopyShapeDimensions(shape) }}
+                    className="cursor-pointer p-1 text-muted-foreground hover:text-foreground"
+                    aria-label={`Copy dimensions for ${shape.name || 'unnamed'}`}
+                  >
+                    <Copy size={13} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Copy dimensions</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => onToggleVisibility(shape.id)}
+                    className="cursor-pointer p-1 text-muted-foreground hover:text-foreground"
+                    aria-label={shape.visible ? `Hide ${shape.name || 'unnamed'}` : `Show ${shape.name || 'unnamed'}`}
+                  >
+                    {shape.visible ? <Eye size={13} /> : <EyeOff size={13} />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{shape.visible ? 'Hide shape' : 'Show shape'}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveShape(shape.id)}
+                    className="cursor-pointer p-1 text-muted-foreground hover:text-red-500"
+                    aria-label={`Remove ${shape.name || 'unnamed'}`}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Remove shape</TooltipContent>
+              </Tooltip>
             </div>
           </div>
         ))}

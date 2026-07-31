@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { ChevronLeft, ChevronRight, Compass, RotateCcw } from 'lucide-react'
 
@@ -37,16 +38,21 @@ export function ViewportToolbar({ activeDirection, isOpen, onDirectionChange, on
           isOpen ? "gap-2" : "gap-0" // <-- Fixed: Removes the ghost gap when collapsed
         )}
       >
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-9 w-9 rounded-lg border border-border/40 text-muted-foreground hover:text-foreground"
-          onClick={onToggle}
-          aria-label={isOpen ? 'Collapse toolbar' : 'Expand toolbar'}
-        >
-          {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </Button>
+        <Tooltip disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-lg border border-border/40 text-muted-foreground hover:text-foreground"
+              onClick={onToggle}
+              aria-label={isOpen ? 'Collapse toolbar' : 'Expand toolbar'}
+            >
+              {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="pointer-events-none">{isOpen ? 'Collapse toolbar' : 'Expand toolbar'}</TooltipContent>
+        </Tooltip>
 
         <div
           className={cn(
@@ -55,19 +61,25 @@ export function ViewportToolbar({ activeDirection, isOpen, onDirectionChange, on
           )}
         >
           <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-            <PopoverTrigger
-              type="button"
-              className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-lg border border-border/50 transition-colors',
-                activeDirection !== 'NORTH' ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-background/90 text-foreground hover:bg-accent/80',
-              )}
-              onClick={(event) => {
-                event.stopPropagation()
-                setIsPopoverOpen((value) => !value)
-              }}
-            >
-              <Compass className="h-4 w-4" />
-            </PopoverTrigger>
+            <Tooltip disableHoverableContent>
+              <TooltipTrigger asChild>
+                <PopoverTrigger
+                  type="button"
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-lg border border-border/50 transition-colors',
+                    activeDirection !== 'NORTH' ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-background/90 text-foreground hover:bg-accent/80',
+                  )}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setIsPopoverOpen((value) => !value)
+                  }}
+                  aria-label="Change preview direction"
+                >
+                  <Compass className="h-4 w-4" />
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="pointer-events-none">Change preview direction</TooltipContent>
+            </Tooltip>
             <PopoverContent
               side="right"
               align="start"

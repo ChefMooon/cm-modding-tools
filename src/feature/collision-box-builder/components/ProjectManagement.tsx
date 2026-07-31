@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Download, Info, Plus, Trash2, X } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/ui/tooltip'
 import type { VoxelProject } from '../types/types'
 import { MAX_PROJECTS, MAX_SHAPES_PER_PROJECT } from '../types/types'
 
@@ -67,9 +68,14 @@ export function ProjectManagement({
               <h2 className="text-base font-semibold text-foreground">Project management</h2>
               <p className="text-sm text-muted-foreground">Review, rename, switch, and organize saved projects.</p>
             </div>
-            <button type="button" onClick={onClose} className="rounded p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground" aria-label="Close project management">
-              <X size={18} />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" onClick={onClose} className="rounded p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground" aria-label="Close project management">
+                  <X size={18} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">Close project management</TooltipContent>
+            </Tooltip>
           </div>
 
           <div className="flex flex-1 flex-col gap-3 overflow-hidden p-4">

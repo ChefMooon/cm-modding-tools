@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronDown, ChevronUp, Copy } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/ui/tooltip'
 import type { CollisionBox, CollisionShape } from '../types/types'
 
 type OutputFlavor = 'standard' | 'absolute'
@@ -157,15 +158,20 @@ export function JavaCodeGenerator({ shapes, copyToClipboard }: JavaCodeGenerator
             <h3 className="text-xs font-medium text-muted-foreground">Java Code Output</h3>
             <p className="text-[10px] text-muted-foreground">Generate clean, copy-ready registration code for your current shape set.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowOutputOptions((current) => !current)}
-            aria-expanded={showOutputOptions}
-            className="flex items-center gap-1.5 rounded border border-border bg-background px-2.5 py-1.5 text-[11px] font-medium text-foreground transition hover:bg-muted"
-          >
-            {showOutputOptions ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            {showOutputOptions ? 'Hide options' : 'Show options'}
-          </button>
+          <Tooltip disableHoverableContent>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setShowOutputOptions((current) => !current)}
+                aria-expanded={showOutputOptions}
+                className="flex items-center gap-1.5 rounded border border-border bg-background px-2.5 py-1.5 text-[11px] font-medium text-foreground transition hover:bg-muted"
+              >
+                {showOutputOptions ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                {showOutputOptions ? 'Hide options' : 'Show options'}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="pointer-events-none">{showOutputOptions ? 'Hide output options' : 'Show output options'}</TooltipContent>
+          </Tooltip>
         </div>
 
         {showOutputOptions ? (
@@ -218,29 +224,37 @@ export function JavaCodeGenerator({ shapes, copyToClipboard }: JavaCodeGenerator
       <div className="overflow-hidden rounded border border-border bg-background">
         <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/50 px-2 py-1.5">
           <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Code Snippet</span>
-          <button
-            type="button"
-            onClick={() => { void handleCopyValue(generatedJavaOutput, 'all-snippet') }}
-            className={`flex min-w-[86px] items-center justify-center rounded border border-border/70 px-2 py-1 text-[10px] font-medium transition-all duration-200 active:scale-[0.97] ${copiedActionId === 'all-snippet' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-foreground/10 text-foreground hover:bg-foreground/20'}`}
-            title={copiedActionId === 'all-snippet' ? 'Copied entire snippet' : 'Copy entire snippet'}
-          >
-            {copiedActionId === 'all-snippet' ? <Check className="mr-1 inline h-3 w-3 shrink-0" /> : <Copy className="mr-1 inline h-3 w-3 shrink-0" />}
-            <span className="whitespace-nowrap">{copiedActionId === 'all-snippet' ? 'Copied' : 'Copy All'}</span>
-          </button>
+          <Tooltip disableHoverableContent>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => { void handleCopyValue(generatedJavaOutput, 'all-snippet') }}
+                className={`flex min-w-[86px] items-center justify-center rounded border border-border/70 px-2 py-1 text-[10px] font-medium transition-all duration-200 active:scale-[0.97] ${copiedActionId === 'all-snippet' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-foreground/10 text-foreground hover:bg-foreground/20'}`}
+              >
+                {copiedActionId === 'all-snippet' ? <Check className="mr-1 inline h-3 w-3 shrink-0" /> : <Copy className="mr-1 inline h-3 w-3 shrink-0" />}
+                <span className="whitespace-nowrap">{copiedActionId === 'all-snippet' ? 'Copied' : 'Copy All'}</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="pointer-events-none">{copiedActionId === 'all-snippet' ? 'Copied entire snippet' : 'Copy entire snippet'}</TooltipContent>
+          </Tooltip>
         </div>
         <div className="overflow-x-auto border-t border-border bg-muted/40 p-2 font-mono text-[11px] text-amber-600 sm:text-xs">
           {snippetRows.map((row, index) => (
             <div key={`snippet-row-${index}`} className="flex min-h-[1.25rem] items-center justify-between gap-2">
               <span className="min-w-0 whitespace-pre-wrap break-words">{row.content}</span>
               {row.copyValue !== undefined ? (
-                <button
-                  type="button"
-                  onClick={() => { if (row.copyValue !== undefined) { void handleCopyValue(row.copyValue, `shape-${index}`) } }}
-                  className={`flex-shrink-0 rounded border border-border/70 px-2 py-1 text-[10px] font-medium transition-all duration-200 active:scale-[0.97] ${copiedActionId === `shape-${index}` ? 'bg-emerald-600 text-white shadow-sm' : 'bg-foreground/10 text-foreground hover:bg-foreground/20'}`}
-                  title={copiedActionId === `shape-${index}` ? 'Copied element values' : 'Copy element values'}
-                >
-                  {copiedActionId === `shape-${index}` ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                </button>
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => { if (row.copyValue !== undefined) { void handleCopyValue(row.copyValue, `shape-${index}`) } }}
+                      className={`flex-shrink-0 rounded border border-border/70 px-2 py-1 text-[10px] font-medium transition-all duration-200 active:scale-[0.97] ${copiedActionId === `shape-${index}` ? 'bg-emerald-600 text-white shadow-sm' : 'bg-foreground/10 text-foreground hover:bg-foreground/20'}`}
+                    >
+                      {copiedActionId === `shape-${index}` ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="pointer-events-none">{copiedActionId === `shape-${index}` ? 'Copied element values' : 'Copy element values'}</TooltipContent>
+                </Tooltip>
               ) : null}
             </div>
           ))}

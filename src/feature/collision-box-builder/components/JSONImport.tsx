@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 import { ChevronDown, ChevronUp, FileJson2, Upload, XCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/ui/tooltip';
 import type { CollisionShape } from '../types/types';
 import { clampCollisionCoordinate, createShape, parseBackupPayload } from '../lib/persistence';
 import { collectFilesFromItems, collectFilesFromSelection } from '../lib/importFileUtils';
@@ -502,14 +503,19 @@ export function JSONImport({ isOpen, onClose, onImport, existingProjects = [], i
             <h2 className="text-sm font-semibold">Import Model JSON</h2>
             <p className="text-xs text-muted-foreground">Parse Blockbench-style element data into collision boxes.</p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            aria-label="Close import modal"
-          >
-            ✕
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                aria-label="Close import modal"
+              >
+                ✕
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Close import modal</TooltipContent>
+          </Tooltip>
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">

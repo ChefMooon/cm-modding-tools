@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react'
 import { FileJson2, Redo2, Undo2 } from 'lucide-react'
 import { ConfirmationDialog } from '../components/ui/confirmation-dialog'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip'
 import { CollisionViewport } from '../feature/collision-box-builder/components/CollisionViewport'
 import { DragDropImportOverlay } from '../feature/collision-box-builder/components/DragDropImportOverlay'
 import { JavaCodeGenerator } from '../feature/collision-box-builder/components/JavaCodeGenerator'
@@ -328,14 +329,15 @@ function RouteComponent() {
   }, [activeProject, addNewShape, copiedShape, duplicateSelectedShape, handleRedo, handleUndo, isDraggingActive, moveAxis, moveShapeByDelta, nudgeSelectedShape, pasteCopiedShape, removeShape, resetSelectedShape, selectedShape, selectedShapeId, setCopiedShape, setSelectedShapeId, shapes, toggleVisibility])
 
   return (
-    <div
-      className="relative mx-auto min-h-screen w-full max-w-screen-2xl text-foreground app-shell"
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-    >
-      {isDraggingActive ? <DragDropImportOverlay /> : null}
+    <TooltipProvider delayDuration={150}>
+      <div
+        className="relative mx-auto min-h-screen w-full max-w-screen-2xl text-foreground app-shell"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {isDraggingActive ? <DragDropImportOverlay /> : null}
 
       <div className="space-y-4">
         <div className="space-y-2 border-b border-border pb-3">
@@ -352,12 +354,22 @@ function RouteComponent() {
               <button type="button" onClick={() => { setQueuedImportFiles([]); setShowImportModal(true) }} className="flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-[11px] font-medium text-foreground transition hover:bg-accent">
                 <FileJson2 size={13} /> Import
               </button>
-              <button disabled={history.length === 0} onClick={handleUndo} className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30 cursor-pointer">
-                <Undo2 size={15} />
-              </button>
-              <button disabled={redoStack.length === 0} onClick={handleRedo} className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30 cursor-pointer">
-                <Redo2 size={15} />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button disabled={history.length === 0} onClick={handleUndo} aria-label="Undo last action" className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30 cursor-pointer">
+                    <Undo2 size={15} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Undo last action</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button disabled={redoStack.length === 0} onClick={handleRedo} aria-label="Redo last action" className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30 cursor-pointer">
+                    <Redo2 size={15} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Redo last action</TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -498,5 +510,6 @@ function RouteComponent() {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   )
 }
