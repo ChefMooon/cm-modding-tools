@@ -1,6 +1,6 @@
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { Monitor, Moon, Sun } from 'lucide-react'
+import { Lightbulb, Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { ToolboxDropdown } from '@/components/ui/toolbox-dropdown'
@@ -67,7 +67,7 @@ function RootComponent() {
   const getThemeIcon = () => {
     if (theme === 'light') return <Moon size={14} />
     if (theme === 'dark') return <Sun size={14} />
-    return <Monitor size={14} />
+    return <Lightbulb size={14} />
   }
 
   const getThemeLabel = () => {
@@ -95,7 +95,7 @@ function RootComponent() {
               </nav>
             </div>
 
-            <div className="flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground sm:justify-end">
+            <div className="flex items-center justify-between gap-4 text-sm font-medium text-muted-foreground sm:justify-end sm:gap-6">
               <Link to="/about" className="transition-colors hover:text-foreground [&.active]:font-semibold [&.active]:text-foreground">
                 About
               </Link>
