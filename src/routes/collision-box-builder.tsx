@@ -178,8 +178,8 @@ function RouteComponent() {
   }
 
   const requestDeleteProject = (projectId: string) => {
-    const project = activeProject
-    if (!project || project.id !== projectId) {
+    const project = storageState.projects.find((candidate) => candidate.id === projectId)
+    if (!project) {
       return
     }
 

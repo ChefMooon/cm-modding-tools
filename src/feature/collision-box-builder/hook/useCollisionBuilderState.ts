@@ -524,7 +524,8 @@ export function useCollisionBuilderState() {
     }
 
     const remainingProjects = storageState.projects.filter((project) => project.id !== projectId)
-    const nextActiveProjectId = remainingProjects[0]?.id ?? null
+    const isDeletingActiveProject = effectiveActiveProjectId === projectId
+    const nextActiveProjectId = isDeletingActiveProject ? (remainingProjects[0]?.id ?? null) : effectiveActiveProjectId
     setStorageState((prev) => normalizeState({ ...prev, activeProjectId: nextActiveProjectId, projects: remainingProjects }))
     setActiveProjectId(nextActiveProjectId)
     setSelectedShapeId('')
