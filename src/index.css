@@ -149,15 +149,15 @@
     transition-timing-function: ease-out;
   }
 
-  button:hover, [data-slot="button"]:hover {
+  button:not(:disabled):hover, [data-slot="button"]:not(:disabled):hover {
     transform: translateY(-1px);
   }
 
-  button:not(:hover), [data-slot="button"]:not(:hover) {
+  button:not(:disabled):not(:hover), [data-slot="button"]:not(:disabled):not(:hover) {
     transition-duration: 240ms;
   }
 
-  button:active:not([data-static='true']), [data-slot="button"]:active:not([data-static='true']) {
+  button:not(:disabled):active:not([data-static='true']), [data-slot="button"]:not(:disabled):active:not([data-static='true']) {
     transform: scale(0.96);
   }
 
