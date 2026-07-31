@@ -422,6 +422,10 @@ function RouteComponent() {
             onDeleteProject={(projectId) => requestDeleteProject(projectId)}
             onRenameProject={renameProject}
             onExportBackup={exportBackup}
+            onClearAllProjects={() => {
+              setShowProjectManagementModal(false)
+              requestClearStorage()
+            }}
           />
         ) : null}
 

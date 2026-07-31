@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Download, Info, Plus, Trash2, X } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/ui/tooltip'
 import type { VoxelProject } from '../types/types'
@@ -14,6 +14,7 @@ interface ProjectManagementProps {
   onDeleteProject: (projectId: string) => void
   onRenameProject: (projectId: string, name: string) => void
   onExportBackup: () => void
+  onClearAllProjects: () => void
 }
 
 function formatTimestamp(timestamp: number) {
@@ -31,7 +32,10 @@ export function ProjectManagement({
   onDeleteProject,
   onRenameProject,
   onExportBackup,
+  onClearAllProjects,
 }: ProjectManagementProps) {
+  const modalContentRef = useRef<HTMLDivElement | null>(null)
+
   useEffect(() => {
     if (!isOpen) {
       return
@@ -39,19 +43,73 @@ export function ProjectManagement({
 
     const originalBodyOverflow = document.body.style.overflow
     const originalBodyHeight = document.body.style.height
+    const originalBodyPosition = document.body.style.position
+    const originalBodyTop = document.body.style.top
+    const originalBodyLeft = document.body.style.left
+    const originalBodyWidth = document.body.style.width
     const originalHtmlOverflow = document.documentElement.style.overflow
     const originalHtmlHeight = document.documentElement.style.height
+    const originalHtmlPosition = document.documentElement.style.position
+    const originalHtmlTop = document.documentElement.style.top
+    const originalHtmlLeft = document.documentElement.style.left
+    const originalHtmlWidth = document.documentElement.style.width
+    const originalHtmlOverscrollBehavior = document.documentElement.style.overscrollBehavior
+    const scrollY = window.scrollY
 
     document.body.style.overflow = 'hidden'
     document.body.style.height = '100%'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.left = '0'
+    document.body.style.width = '100%'
     document.documentElement.style.overflow = 'hidden'
     document.documentElement.style.height = '100%'
+    document.documentElement.style.position = 'fixed'
+    document.documentElement.style.top = `-${scrollY}px`
+    document.documentElement.style.left = '0'
+    document.documentElement.style.width = '100%'
+    document.documentElement.style.overscrollBehavior = 'none'
+
+    const preventBackgroundScroll = (event: WheelEvent | TouchEvent) => {
+      if (modalContentRef.current?.contains(event.target as Node)) {
+        return
+      }
+
+      event.preventDefault()
+    }
+
+    const preventBackgroundKeyboardScroll = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLElement && modalContentRef.current?.contains(event.target)) {
+        return
+      }
+
+      if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) {
+        event.preventDefault()
+      }
+    }
+
+    document.addEventListener('wheel', preventBackgroundScroll, { passive: false })
+    document.addEventListener('touchmove', preventBackgroundScroll, { passive: false })
+    document.addEventListener('keydown', preventBackgroundKeyboardScroll)
 
     return () => {
       document.body.style.overflow = originalBodyOverflow
       document.body.style.height = originalBodyHeight
+      document.body.style.position = originalBodyPosition
+      document.body.style.top = originalBodyTop
+      document.body.style.left = originalBodyLeft
+      document.body.style.width = originalBodyWidth
       document.documentElement.style.overflow = originalHtmlOverflow
       document.documentElement.style.height = originalHtmlHeight
+      document.documentElement.style.position = originalHtmlPosition
+      document.documentElement.style.top = originalHtmlTop
+      document.documentElement.style.left = originalHtmlLeft
+      document.documentElement.style.width = originalHtmlWidth
+      document.documentElement.style.overscrollBehavior = originalHtmlOverscrollBehavior
+      window.scrollTo(0, scrollY)
+      document.removeEventListener('wheel', preventBackgroundScroll)
+      document.removeEventListener('touchmove', preventBackgroundScroll)
+      document.removeEventListener('keydown', preventBackgroundKeyboardScroll)
     }
   }, [isOpen])
 
@@ -62,7 +120,7 @@ export function ProjectManagement({
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-background/80 backdrop-blur-sm">
       <div className="flex min-h-screen items-center justify-center p-3">
-        <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
+        <div ref={modalContentRef} className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div>
               <h2 className="text-base font-semibold text-foreground">Project management</h2>
@@ -150,14 +208,23 @@ export function ProjectManagement({
                         Browser cleanup, privacy resets, or switching devices can remove saved projects. Export a backup before making big changes.
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={onExportBackup}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-[11px] font-medium text-foreground transition hover:bg-accent"
-                    >
-                      <Download size={12} />
-                      Download JSON backup
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={onExportBackup}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-[11px] font-medium text-foreground transition hover:bg-accent"
+                      >
+                        <Download size={12} />
+                        Download JSON backup
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onClearAllProjects}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-red-500/40 bg-red-500/10 px-2.5 py-1.5 text-[11px] font-medium text-red-700 transition hover:bg-red-500/20 dark:text-red-300"
+                      >
+                        Clear all saved projects
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
