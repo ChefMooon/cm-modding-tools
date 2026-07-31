@@ -10,10 +10,12 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  static: isStatic = false,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    static?: boolean
   }) {
   const Comp = asChild ? Slot.Root : "button"
 
@@ -22,6 +24,7 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      data-static={isStatic ? 'true' : undefined}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

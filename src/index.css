@@ -142,6 +142,31 @@
     @apply bg-background text-foreground;
     transition: background-color 180ms ease, color 180ms ease;
     }
+
+  button, [data-slot="button"] {
+    transition-property: transform, background-color, border-color, color, box-shadow, opacity;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+  }
+
+  button:hover, [data-slot="button"]:hover {
+    transform: translateY(-1px);
+  }
+
+  button:not(:hover), [data-slot="button"]:not(:hover) {
+    transition-duration: 240ms;
+  }
+
+  button:active:not([data-static='true']), [data-slot="button"]:active:not([data-static='true']) {
+    transform: scale(0.96);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    button, [data-slot="button"] {
+      transition: none !important;
+      transform: none !important;
+    }
+  }
   .app-shell {
     background-color: var(--app-surface);
     color: var(--app-text);

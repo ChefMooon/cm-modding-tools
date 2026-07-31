@@ -229,7 +229,7 @@ export function JavaCodeGenerator({ shapes, copyToClipboard }: JavaCodeGenerator
               <button
                 type="button"
                 onClick={() => { void handleCopyValue(generatedJavaOutput, 'all-snippet') }}
-                className={`flex min-w-[86px] items-center justify-center rounded border border-border/70 px-2 py-1 text-[10px] font-medium transition-all duration-200 active:scale-[0.97] ${copiedActionId === 'all-snippet' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-foreground/10 text-foreground hover:bg-foreground/20'}`}
+                className={`flex min-w-[86px] items-center justify-center rounded border border-border/70 px-2 py-1 text-[10px] font-medium transition-[transform,background-color,border-color,color,box-shadow,opacity] duration-200 ease-out active:scale-[0.96] ${copiedActionId === 'all-snippet' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-foreground/10 text-foreground hover:bg-foreground/20'}`}
               >
                 {copiedActionId === 'all-snippet' ? <Check className="mr-1 inline h-3 w-3 shrink-0" /> : <Copy className="mr-1 inline h-3 w-3 shrink-0" />}
                 <span className="whitespace-nowrap">{copiedActionId === 'all-snippet' ? 'Copied' : 'Copy All'}</span>
@@ -248,7 +248,7 @@ export function JavaCodeGenerator({ shapes, copyToClipboard }: JavaCodeGenerator
                     <button
                       type="button"
                       onClick={() => { if (row.copyValue !== undefined) { void handleCopyValue(row.copyValue, `shape-${index}`) } }}
-                      className={`flex-shrink-0 rounded border border-border/70 px-2 py-1 text-[10px] font-medium transition-all duration-200 active:scale-[0.97] ${copiedActionId === `shape-${index}` ? 'bg-emerald-600 text-white shadow-sm' : 'bg-foreground/10 text-foreground hover:bg-foreground/20'}`}
+                      className={`flex-shrink-0 rounded border border-border/70 px-2 py-1 text-[10px] font-medium transition-[transform,background-color,border-color,color,box-shadow,opacity] duration-200 ease-out active:scale-[0.96] ${copiedActionId === `shape-${index}` ? 'bg-emerald-600 text-white shadow-sm' : 'bg-foreground/10 text-foreground hover:bg-foreground/20'}`}
                     >
                       {copiedActionId === `shape-${index}` ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                     </button>
